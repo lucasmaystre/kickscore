@@ -22,23 +22,24 @@ class DynamicParamFitter:
     def init(self):
         self._ts = np.array(self._parent._ts)
         self._kmat = self._parent._k.compute(self._ts)
-        self._kmat_inv = inv_pd(self._kmat)
         self._taus = np.zeros(len(self._ts))
         self._nus = np.zeros(len(self._ts))
         self._parent._mean = np.zeros(len(self._ts))
         self._parent._cov = self._kmat
 
     def recompute(self):
-        cov = inv_pd(self._kmat_inv + np.diag(self._taus))
-        mean = np.dot(cov, self._nus)
-        self._parent._cov = cov
-        self._parent._mean = mean
         # Woodbury inverse and Woodbury vector - used for prediction. Idea
         # taken from GPy (`latent_function_inference.posterior`).
         sigmas = 1 / self._taus
+        # TODO This can be improved, see (3.67) and (3.68) in GPML.
         mat = inv_pd(self._kmat + np.diag(sigmas))
         self._parent._woodbury_inv = mat
         self._parent._woodbury_vec = mat.dot(sigmas * self._nus)
+        # Recompute mean and covariance.
+        cov = self._kmat - self._kmat.dot(mat).dot(self._kmat)
+        mean = np.dot(cov, self._nus)
+        self._parent._cov = cov
+        self._parent._mean = mean
 
     def set_natural_params(self, idx, nu, tau):
         self._nus[idx] = nu
