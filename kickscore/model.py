@@ -56,11 +56,13 @@ class KickScore():
     def observe_diff(self, diff, winners, losers, t):
         raise NotImplementedError()
 
-    def fit(self, max_iter=100):
+    def fit(self, max_iter=100, verbose=False):
         for param in self._param.values():
             param.fitter.init()
         n_obs = len(self._obs)
         for _ in range(max_iter):
+            if verbose:
+                print(".", end="", flush=True)
             converged = list()
             for i in np.random.permutation(n_obs):
                 c = self._obs[i].ep_update()
@@ -69,6 +71,8 @@ class KickScore():
             for param in self._param.values():
                 param.fitter.recompute()
             if all(converged):
+                if verbose:
+                    print()
                 return
         raise RuntimeError(
                 "did not converge after {} iterations".format(max_iter))
