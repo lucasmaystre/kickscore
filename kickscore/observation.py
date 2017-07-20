@@ -6,18 +6,15 @@ from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
 class BinaryObservation:
 
     def __init__(self, winner, loser, t):
-        self._winner = winner
-        self._loser = loser
-        self._wid = winner.add_sample(t)
-        self._lid = loser.add_sample(t)
+        self._w_sample = winner.add_sample(t)
+        self._l_sample = loser.add_sample(t)
         self._tau = 0
         self._nu = 0
 
     def ep_update(self, threshold=1e-4):
         # Mean and variance in function space.
-        f_var = (self._winner.cov[self._wid, self._wid]
-                + self._loser.cov[self._lid, self._lid])
-        f_mean = self._winner.mean[self._wid] - self._loser.mean[self._lid]
+        f_var = self._w_sample.var + self._l_sample.var
+        f_mean = self._w_sample.mean - self._l_sample.mean
         # Cavity distribution.
         tau_tot = 1.0 / f_var
         nu_tot = tau_tot * f_mean
@@ -32,8 +29,8 @@ class BinaryObservation:
         nu = ((dlogpart - (nu_cav / tau_cav) * d2logpart)
                  / (1 + d2logpart / tau_cav))
         # Update factor params in the weight space.
-        self._winner.fitter.set_natural_params(self._wid, +nu, tau)
-        self._loser.fitter.set_natural_params(self._lid, -nu, tau)
+        self._w_sample.set_natural_params(+nu, tau)
+        self._l_sample.set_natural_params(-nu, tau)
         # Check for convergence.
         converged = False
         if (abs(tau - self._tau) < threshold

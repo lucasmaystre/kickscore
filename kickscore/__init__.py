@@ -4,13 +4,9 @@
 from . import kernel
 
 from .model import (
-    KickScore,
+    BinaryModel,
 )
 
-from .observation import (
-    BinaryObservation,
-)
-
-from .parameter import (
-    DynamicParam,
+from .item import (
+    Item,
 )
