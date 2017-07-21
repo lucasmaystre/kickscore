@@ -8,6 +8,7 @@ class BinaryObservation:
     def __init__(self, winner, loser, t):
         self._w_sample = winner.add_sample(t)
         self._l_sample = loser.add_sample(t)
+        # TODO: this should be reinitialized at each call to `model.fit()`.
         self._tau = 0
         self._nu = 0
 

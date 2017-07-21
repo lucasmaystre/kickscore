@@ -44,11 +44,14 @@ class ItemFitter:
         self._taus = np.zeros(len(self._ts))
         self._nus = np.zeros(len(self._ts))
         self._parent._mean = np.zeros(len(self._ts))
-        self._parent._cov = self._kmat
+        self._parent._var = np.diag(self._kmat)
 
     def recompute(self):
         # Woodbury inverse and Woodbury vector - used for prediction. Idea
         # taken from GPy (`latent_function_inference.posterior`).
+        if len(self._ts) == 0:
+            # No observation at all for this item.
+            return
         sigmas = 1 / self._taus
         # TODO This can be improved, see (3.67) and (3.68) in GPML.
         mat = inv_posdef(self._kmat + np.diag(sigmas))
@@ -57,7 +60,7 @@ class ItemFitter:
         # Recompute mean and covariance.
         cov = self._kmat - self._kmat.dot(mat).dot(self._kmat)
         mean = np.dot(cov, self._nus)
-        self._parent._cov = cov
+        self._parent._var = np.diag(cov)
         self._parent._mean = mean
 
 
@@ -70,7 +73,7 @@ class Item:
         self._woodbury_inv = None
         self._woodbury_vec = None
         self._mean = None
-        self._cov = None
+        self._var = None
 
     @property
     def fitter(self):
@@ -82,7 +85,7 @@ class Item:
 
     @property
     def var(self):
-        return np.diag(self._cov)
+        return self._var
 
     @property
     def ts(self):
