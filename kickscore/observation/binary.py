@@ -1,21 +1,26 @@
 import functools
 
+from .observation import Observation
 from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
 
 
-class BinaryObservation:
+class BinaryObservation(Observation):
 
     def __init__(self, winner, loser, t):
-        self._w_sample = winner.add_sample(t)
-        self._l_sample = loser.add_sample(t)
-        # TODO: this should be reinitialized at each call to `model.fit()`.
+        self.t = t
+        self._winner = winner
+        self._wid = winner.fitter.add_sample(t)
+        self._loser = loser
+        self._lid = loser.fitter.add_sample(t)
         self._tau = 0
         self._nu = 0
 
     def ep_update(self, threshold=1e-4):
         # Mean and variance in function space.
-        f_var = self._w_sample.var + self._l_sample.var
-        f_mean = self._w_sample.mean - self._l_sample.mean
+        f_var = (self._winner.fitter.vars[self._wid]
+                + self._loser.fitter.vars[self._lid])
+        f_mean = (self._winner.fitter.means[self._wid]
+                - self._loser.fitter.means[self._lid])
         # Cavity distribution.
         tau_tot = 1.0 / f_var
         nu_tot = tau_tot * f_mean
@@ -30,8 +35,10 @@ class BinaryObservation:
         nu = ((dlogpart - (nu_cav / tau_cav) * d2logpart)
                  / (1 + d2logpart / tau_cav))
         # Update factor params in the weight space.
-        self._w_sample.set_natural_params(+nu, tau)
-        self._l_sample.set_natural_params(-nu, tau)
+        self._winner.fitter.nus[self._wid] = +nu
+        self._loser.fitter.nus[self._lid] = -nu
+        self._winner.fitter.taus[self._wid] = tau
+        self._loser.fitter.taus[self._lid] = tau
         # Check for convergence.
         converged = False
         if (abs(tau - self._tau) < threshold
