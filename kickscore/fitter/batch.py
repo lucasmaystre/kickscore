@@ -33,9 +33,8 @@ class BatchFitter(Fitter):
         # Woodbury inverse and Woodbury vector - used for prediction. Idea
         # taken from GPy (`latent_function_inference.posterior`).
         if not self.is_allocated:
-            raise RuntimeError("new data since last call to `allocate()`.")
-        n_obs = len(self.ts)
-        if n_obs > 0:
+            raise RuntimeError("new data since last call to `allocate()`")
+        if len(self.ts) > 0:
             # TODO The next two lines can be improved, see (3.67) and (3.68) in
             # GPML.
             sigmas = 1 / self.taus
@@ -48,15 +47,9 @@ class BatchFitter(Fitter):
             self.vars = np.diag(cov)
         self.is_fitted = True
 
-    @property
-    def posterior(self):
-        if not self.is_fitted:
-            raise RuntimeError("new data since last call to `fit()`.")
-        return (self.ts, self.mean, self.var)
-
     def predict(self, ts):
         if not self.is_fitted:
-            raise RuntimeError("new data since last call to `fit()`.")
+            raise RuntimeError("new data since last call to `fit()`")
         # (3.60) and (3.61) in the GPML book.
         k_mat1 = self.kernel.k_mat(ts, self.ts)
         k_mat2 = self.kernel.k_mat(ts, ts)

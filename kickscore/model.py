@@ -15,8 +15,8 @@ class Model(metaclass=abc.ABCMeta):
     def item(self):
         return self._item
 
-    def add_item(self, name, kernel):
-        self._item[name] = Item(kernel=kernel)
+    def add_item(self, name, kernel, fitter="batch"):
+        self._item[name] = Item(kernel=kernel, fitter=fitter)
 
     @abc.abstractmethod
     def observe(self, *args, **kwargs):

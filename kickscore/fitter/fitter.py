@@ -18,13 +18,20 @@ class Fitter(metaclass=abc.ABCMeta):
         # State of the fitter.
         self.is_fitted = False
 
+    def add_sample(self, t):
+        idx = len(self.ts) + len(self.ts_new)
+        self.ts_new.append(t)
+        self.is_fitted = False
+        return idx
+
     def allocate(self):
         n_new = len(self.ts_new)
-        self.ts = np.hstack((self.ts, self.ts_new))
-        self.means = np.hstack((self.means, np.zeros(n_new)))
-        self.vars = np.hstack((self.vars, self.kernel.k_diag(self.ts_new)))
-        self.nus = np.hstack((self.nus, np.zeros(n_new)))
-        self.taus = np.hstack((self.taus, np.zeros(n_new)))
+        self.ts = np.concatenate((self.ts, self.ts_new))
+        self.means = np.concatenate((self.means, np.zeros(n_new)))
+        self.vars = np.concatenate(
+                (self.vars, self.kernel.k_diag(self.ts_new)))
+        self.nus = np.concatenate((self.nus, np.zeros(n_new)))
+        self.taus = np.concatenate((self.taus, np.zeros(n_new)))
         # Clear the list of pending samples.
         self.ts_new = list()
 
@@ -32,20 +39,16 @@ class Fitter(metaclass=abc.ABCMeta):
     def is_allocated(self):
         return len(self.ts_new) == 0
 
+    @property
+    def posterior(self):
+        if not self.is_fitted:
+            raise RuntimeError("new data since last call to `fit()`")
+        return (self.ts, self.means, self.vars)
+
     @abc.abstractmethod
     def fit(self):
-        pass
-
-    @abc.abstractproperty
-    def posterior(self):
         pass
 
     @abc.abstractmethod
     def predict(self, ts):
         pass
-
-    def add_sample(self, t):
-        idx = len(self.ts) + len(self.ts_new)
-        self.ts_new.append(t)
-        self.is_fitted = False
-        return idx

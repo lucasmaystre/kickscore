@@ -1,12 +1,14 @@
 import numpy as np
-from .fitter import BatchFitter
+from .fitter import BatchFitter, RecursiveFitter
 
 
 class Item:
 
-    def __init__(self, kernel, fitter="batch"):
+    def __init__(self, kernel, fitter):
         if fitter == "batch":
             self.fitter = BatchFitter(kernel)
+        elif fitter == "recursive":
+            self.fitter = RecursiveFitter(kernel)
         else:
             raise ValueError("invalid fitter type '{}'".format(fitter))
         self.observations = list()
