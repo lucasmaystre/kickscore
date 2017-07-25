@@ -61,6 +61,11 @@ class Kernel(metaclass=abc.ABCMeta):
         # <https://github.com/SheffieldML/GPy/blob/devel/GPy/models/state_space.py#L715>
         raise NotImplementedError()
 
+    def __add__(self, other):
+        # Delayed import to avoid circular dependencies.
+        from .add import Add
+        return Add(self, other)
+
     @staticmethod
     def distances(ts1, ts2):
         # mat[i, j] = |ts1[i] - ts2[j]|

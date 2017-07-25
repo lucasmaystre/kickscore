@@ -16,7 +16,7 @@ class Matern52(Kernel):
         self.lscale = lscale
         self.lambda_ = sqrt(5) / lscale
 
-    def k_mat(self, ts1, ts2=None, diag=False):
+    def k_mat(self, ts1, ts2=None):
         if ts2 is None:
             ts2 = ts1
         r = Kernel.distances(ts1, ts2) / self.lscale
