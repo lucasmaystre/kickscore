@@ -20,14 +20,14 @@ class Kernel(metaclass=abc.ABCMeta):
         """Order of the SDE :math:`m`."""
         return 3
 
-    @abc.abstractproperty
-    def initial_mean(self):
-        """Initial state mean vector :math:`\mathbf{m}_0`."""
+    @abc.abstractmethod
+    def state_mean(self, t):
+        """Prior mean of the state vector, :math:`\mathbf{m}_0(t)`."""
         pass
 
-    @abc.abstractproperty
-    def initial_cov(self):
-        """Initial state covariance matrix :math:`\mathbf{P}_0`."""
+    @abc.abstractmethod
+    def state_cov(self, t):
+        """Prior covariance of the state vector, :math:`\mathbf{P}_0(t)`."""
         pass
 
     @abc.abstractproperty
@@ -69,26 +69,6 @@ class Kernel(metaclass=abc.ABCMeta):
     @staticmethod
     def distances(ts1, ts2):
         # mat[i, j] = |ts1[i] - ts2[j]|
-        n_rows = len(ts1)
-        n_cols = len(ts2)
-        return np.abs(np.tile(ts1, (n_cols, 1)).T - np.tile(ts2, (n_rows, 1)))
+        return np.abs(ts1[:,np.newaxis] - ts2[np.newaxis,:])
 
-
-# Future kernels to implement:
-#class Wiener(Kernel):
-#    pass
-#
-#class Constant(Kernel):
-#    pass
-#
-#class Linear(Kernel);
-#    pass
-#
-#class Exponential(Kernel):
-#    pass
-#
-#class Matern32(Kernel):
-#    pass
-#
-#class Sum(Kernel):
-#    pass
+    # TODO simlulate()

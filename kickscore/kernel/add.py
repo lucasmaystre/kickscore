@@ -32,14 +32,12 @@ class Add(Kernel):
         mats = [k.noise_cov(delta) for k in self.parts]
         return block_diag(*mats)
 
-    @property
-    def initial_mean(self):
-        vecs = [k.initial_mean for k in self.parts]
+    def state_mean(self, t):
+        vecs = [k.state_mean(t) for k in self.parts]
         return np.concatenate(vecs)
 
-    @property
-    def initial_cov(self):
-        mats = [k.initial_cov for k in self.parts]
+    def state_cov(self, t):
+        mats = [k.state_cov(t) for k in self.parts]
         return block_diag(*mats)
 
     @property

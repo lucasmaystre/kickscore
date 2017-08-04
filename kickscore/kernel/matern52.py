@@ -31,37 +31,38 @@ class Matern52(Kernel):
         return 3
 
     def transition(self, delta):
-        """Transition matrix :math:`A` for a given time interval."""
         # TODO This can be improved by rewriting in terms of $d / a$.
         d = delta
         a = self.lambda_
+        da = d * a
         A = np.array([
-            [(d*d * a*a) / 2 + d * a + 1,
-                d * (d * a + 1),
+            [(da*da) / 2 + da + 1,
+                d * (da + 1),
                 d*d / 2],
-            [-(d*d * a**3) / 2,
-                -(d*d * a*a) + d * a + 1,
-                -(d / 2) * (d * a - 2)],
-            [(d * a*a*a / 2) * (d * a - 2),
-                (d * a*a) * (d * a - 3),
-                (d*d * a*a - 4 * d * a + 2) / 2],
+            [-(da*da * a) / 2,
+                -da*da + da + 1,
+                -(d / 2) * (da - 2)],
+            [(da * a*a / 2) * (da - 2),
+                (da * a) * (da - 3),
+                (da*da - 4 * da + 2) / 2],
         ])
-        return exp(-d * a) * A
+        return exp(-da) * A
 
     def noise_cov(self, delta):
         d = delta
         a = self.lambda_
-        c = exp(-2 * d * a)
-        x11 = -(1 / 3) * (c * (2 * d**4 * a**4 + 4 * d**3 * a**3
-                + 6 * d*d * a*a + 6 * d * a + 3) - 3)
-        x12 = c * (2 / 3) * a**5 * d**4
-        x13 = -(a*a / 3) * (c * (2 * d**4 * a**4 - 4 * d**3 * a**3
-                - 2 * d*d * a*a - 2 * d * a - 1) + 1)
-        x22 = -(a*a / 3) * (c * (2 * d**4 * a**4 - 4 * d**3 * a**3
-                + 2 * d*d * a*a + 2 * d * a + 1) - 1)
-        x23 = c * (2 / 3) * d*d * a**5 * (d * a - 2)**2
-        x33 = -(a**4 / 3) * (c * (2 * d**4 * a**4 - 12 * d**3 * a**3
-                + 22 * d*d * a*a - 10 * d * a + 3) - 3)
+        da = d * a
+        c = exp(-2 * da)
+        x11 = -(1 / 3) * (c * (2 * da**4 + 4 * da**3
+                + 6 * da*da + 6 * da + 3) - 3)
+        x12 = c * (2 / 3) * a * da**4
+        x13 = -(a*a / 3) * (c * (2 * da**4 - 4 * da**3
+                - 2 * da*da - 2 * da - 1) + 1)
+        x22 = -(a*a / 3) * (c * (2 * da**4 - 4 * da**3
+                + 2 * da*da + 2 * da + 1) - 1)
+        x23 = c * (2 / 3) * da*da * a**3 * (da - 2)**2
+        x33 = -(a**4 / 3) * (c * (2 * da**4 - 12 * da**3
+                + 22 * da*da - 10 * da + 3) - 3)
         mat = np.array([
             [x11, x12, x13],
             [x12, x22, x23],
@@ -69,12 +70,10 @@ class Matern52(Kernel):
         ])
         return self.var * mat
 
-    @property
-    def initial_mean(self):
+    def state_mean(self, t):
         return STATIONARY_MEAN
 
-    @property
-    def initial_cov(self):
+    def state_cov(self, t):
         return self.stationary_cov
 
     @property

@@ -31,8 +31,8 @@ class RecursiveFitter(Fitter):
         self.nus = np.concatenate((self.nus, np.zeros(n_new)))
         self.taus = np.concatenate((self.taus, np.zeros(n_new)))
         # Initialize the predictive, filtering and smoothing distributions.
-        mean = np.tile(self.kernel.initial_mean, (n_new, 1))
-        cov = np.tile(self.kernel.initial_cov, (n_new, 1, 1))
+        mean = np.array([self.kernel.state_mean(t) for t in self.ts_new])
+        cov = np.array([self.kernel.state_cov(t) for t in self.ts_new])
         self._m_p = np.concatenate((self._m_p, mean))
         self._P_p = np.concatenate((self._P_p, cov))
         self._m_f = np.concatenate((self._m_f, mean))
@@ -111,8 +111,8 @@ class RecursiveFitter(Fitter):
             else:
                 j = nxt - 1
                 if j < 0:
-                    m = self.kernel.initial_mean
-                    P = self.kernel.initial_cov
+                    m = self.kernel.state_mean(ts[i])
+                    P = self.kernel.state_cov(ts[i])
                 else:
                     # Predictive mean and cov for new point based on left
                     # neighbor.

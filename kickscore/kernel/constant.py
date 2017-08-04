@@ -32,12 +32,10 @@ class Constant(Kernel):
     def noise_cov(self, delta):
         return ARRAY_ZERO
 
-    @property
-    def initial_mean(self):
+    def state_mean(self, t):
         return VEC_ZERO
 
-    @property
-    def initial_cov(self):
+    def state_cov(self, t):
         return self.var * ARRAY_ONE
 
     @property
