@@ -1,1 +1,4 @@
-from .binary import BinaryObservation
+from .probit import (
+    ProbitObservation,
+    ProbitTieObservation,
+)

@@ -20,6 +20,7 @@ from . import kernel
 
 from .model import (
     BinaryModel,
+    TernaryModel,
 )
 
 from .item import (

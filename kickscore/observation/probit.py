@@ -4,50 +4,28 @@ from .observation import Observation
 from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
 
 
-class BinaryObservation(Observation):
+class ProbitObservation(Observation):
 
-    def __init__(self, winner, loser, t):
-        self.t = t
-        self._winner = winner
-        self._wid = winner.fitter.add_sample(t)
-        self._loser = loser
-        self._lid = loser.fitter.add_sample(t)
-        self._tau = 0
-        self._nu = 0
+    def __init__(self, winners, losers, t, margin=None):
+        super().__init__(winners, losers, t)
+        self._margin = margin
 
-    def ep_update(self, threshold=1e-4):
-        # Mean and variance in function space.
-        f_var = (self._winner.fitter.vars[self._wid]
-                + self._loser.fitter.vars[self._lid])
-        f_mean = (self._winner.fitter.means[self._wid]
-                - self._loser.fitter.means[self._lid])
-        # Cavity distribution.
-        tau_tot = 1.0 / f_var
-        nu_tot = tau_tot * f_mean
-        tau_cav = tau_tot - self._tau
-        nu_cav = nu_tot - self._nu
-        cov_cav = 1.0 / tau_cav
-        mean_cav = cov_cav * nu_cav
-        # Moment matching.
-        logpart, dlogpart, d2logpart = _match_moments_probit(mean_cav, cov_cav)
-        # Update factor params in the function space.
-        tau = -d2logpart / (1 + d2logpart / tau_cav)
-        nu = ((dlogpart - (nu_cav / tau_cav) * d2logpart)
-                 / (1 + d2logpart / tau_cav))
-        # Update factor params in the weight space.
-        self._winner.fitter.nus[self._wid] = +nu
-        self._loser.fitter.nus[self._lid] = -nu
-        self._winner.fitter.taus[self._wid] = tau
-        self._loser.fitter.taus[self._lid] = tau
-        # Check for convergence.
-        converged = False
-        if (abs(tau - self._tau) < threshold
-                and abs(nu - self._nu) < threshold):
-            converged = True
-        # Save new parameters.
-        self._nu = nu
-        self._tau = tau
-        return converged
+    def match_moments(self, mean_cav, cov_cav):
+        if self._margin is None:
+            return _match_moments_probit(mean_cav, cov_cav)
+        else:
+            return _match_moments_probit(mean_cav - self._margin, cov_cav)
+
+
+class ProbitTieObservation(Observation):
+
+    def __init__(self, items1, items2, t, margin):
+        super().__init__(items1, items2, t)
+        self._margin = margin
+
+    def match_moments(self, mean_cav, cov_cav):
+        return _match_moments_probit_tie(mean_cav, cov_cav, self._margin)
+
 
 
 # Some magic constants for a stable computation of logphi(z).
@@ -64,6 +42,11 @@ QS = [
 
 SQRT2 = sqrt(2.0)
 SQRT2PI = sqrt(2.0 * pi)
+
+
+def _normpdf(x):
+    """Normal probability density function."""
+    return exp(-x*x / 2.0) / SQRT2PI
 
 
 def _normcdf(x):
@@ -99,4 +82,19 @@ def _match_moments_probit(mean_cav, cov_cav):
     logpart, val = _logphi(z)
     dlogpart = val / sqrt(1 + cov_cav)  # 1st derivative w.r.t. mean.
     d2logpart = -val * (z + val) / (1 + cov_cav)
+    return logpart, dlogpart, d2logpart
+
+
+def _match_moments_probit_tie(mean_cav, cov_cav, margin):
+    # TODO This is probably numerically unstable.
+    denom = sqrt(1 + cov_cav)
+    z1 = (mean_cav + margin) / denom
+    z2 = (mean_cav - margin) / denom
+    Phi1 = _normcdf(z1)
+    Phi2 = _normcdf(z2)
+    v1 = _normpdf(z1)
+    v2 = _normpdf(z2)
+    logpart = log(Phi1 - Phi2)
+    dlogpart = (v1 - v2) / (denom * (Phi1 - Phi2))
+    d2logpart = (-z1 * v1 + z2 * v2) / ((1 + cov_cav) * (Phi1 - Phi2)) - dlogpart**2
     return logpart, dlogpart, d2logpart
