@@ -43,6 +43,13 @@ class Model(metaclass=abc.ABCMeta):
                 return True
         return False  # Did not converge after `max_iter`.
 
+    @property
+    def log_likelihood(self):
+        """Log-marginal likelihood of the model."""
+        return (sum(o.log_likelihood_contrib for o in self.observations)
+                + sum(i.fitter.log_likelihood_contrib
+                        for i in self.item.values()))
+
     def process_items(self, items):
         if isinstance(items, dict):
             return {self.item[k]: float(v) for k, v in items.items()}

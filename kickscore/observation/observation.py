@@ -1,5 +1,7 @@
 import abc
 
+from math import log
+
 
 class Observation(metaclass=abc.ABCMeta):
 
@@ -15,6 +17,9 @@ class Observation(metaclass=abc.ABCMeta):
         self.t = t
         self._tau = 0
         self._nu = 0
+        self._logpart = 0
+        self._mean_cav = 0
+        self._cov_cav = 0
 
     @abc.abstractmethod
     def match_moments(self, mean_cav, cov_cav):
@@ -55,7 +60,19 @@ class Observation(metaclass=abc.ABCMeta):
         if (abs(tau - self._tau) < threshold
                 and abs(nu - self._nu) < threshold):
             converged = True
-        # Save new parameters.
+        # Save the new parameters & info for the log-likelihood.
         self._nu = nu
         self._tau = tau
+        self._logpart = logpart
+        self._mean_cav = mean_cav
+        self._cov_cav = cov_cav
         return converged
+
+    @property
+    def log_likelihood_contrib(self):
+        """Contribution to the log-marginal likelihood of the model."""
+        nu, tau = self._nu, self._tau
+        m, s = self._mean_cav, self._cov_cav
+        return (self._logpart + 0.5 * log(tau * s + 1)
+                + (-nu**2 * s - 2 * nu * m + tau * m**2) / (2 * (tau * s + 1)))
+

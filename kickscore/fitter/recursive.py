@@ -1,6 +1,7 @@
 import numpy as np
 
 from .fitter import Fitter
+from math import log
 from scipy.linalg import cho_factor, cho_solve
 
 
@@ -89,6 +90,26 @@ class RecursiveFitter(Fitter):
             var[i] = h.dot(P_s[i]).dot(h)
         # set self.means and self.vars
         self.is_fitted = True
+
+    @property
+    def log_likelihood_contrib(self):
+        """Contribution to the log-marginal likelihood of the model."""
+        # Note: this is *not* equal to the log of the marginal likelihood of the
+        # regression model. See "stable computation of the marginal likelihood"
+        # in the notes.
+        if not self.is_fitted:
+            raise RuntimeError("new data since last call to `fit()`")
+        h = self._h
+        m_p, P_p = self._m_p, self._P_p
+        nu, tau = self.nus, self.taus
+        val = 0.0
+        for i in range(len(self.ts)):
+            v = h.dot(m_p[i])
+            x = h.dot(P_p[i]).dot(h)
+            val += -0.5 * (log(tau[i] * x  + 1.0)
+                    + (-nu[i]**2 * x - 2 * nu[i] * v + tau[i] * v**2)
+                    / (tau[i] * x + 1))
+        return val
 
     def predict(self, ts):
         if not self.is_fitted:

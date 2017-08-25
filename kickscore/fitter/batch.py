@@ -6,21 +6,12 @@ from .fitter import Fitter
 from scipy.linalg import solve_triangular
 
 
-def inv_posdef(mat):
-    """Stable inverse of a positive definite matrix."""
-    # See:
-    # - http://www.seas.ucla.edu/~vandenbe/103/lectures/chol.pdf
-    # - http://scicomp.stackexchange.com/questions/3188
-    chol = np.linalg.cholesky(mat)
-    ident = np.eye(mat.shape[0])
-    res = solve_triangular(chol, ident, lower=True, overwrite_b=True)
-    return np.transpose(res).dot(res)
-
-
 class BatchFitter(Fitter):
 
     def __init__(self, kernel):
         super().__init__(kernel)
+        self._cov = None
+        self._b_cholesky = None
         self._woodbury_inv = None
         self._woodbury_vec = None
 
@@ -35,17 +26,35 @@ class BatchFitter(Fitter):
         if not self.is_allocated:
             raise RuntimeError("new data since last call to `allocate()`")
         if len(self.ts) > 0:
-            # TODO The next two lines can be improved, see (3.67) and (3.68) in
-            # GPML.
-            sigmas = 1 / self.taus
-            mat = inv_posdef(self._k_mat + np.diag(sigmas))
-            self._woodbury_inv = mat
-            self._woodbury_vec = mat.dot(sigmas * self.nus)
+            # Stable computation of the woodbury inverse.
+            xs = np.sqrt(self.taus)
+            b_cho = np.linalg.cholesky(
+                    np.eye(len(self.ts)) + np.outer(xs, xs) * self._k_mat)
+            mat = solve_triangular(
+                    b_cho, np.diag(xs), lower=True, overwrite_b=True)
+            w_inv = np.transpose(mat).dot(mat)
             # Recompute mean and covariance.
-            cov = self._k_mat - self._k_mat.dot(mat).dot(self._k_mat)
+            cov = self._k_mat - self._k_mat.dot(w_inv).dot(self._k_mat)
             self.means = np.dot(cov, self.nus)
             self.vars = np.diag(cov)
+            # Store some quantities for prediction and marginal likelihood).
+            self._cov = cov
+            self._b_cholesky = b_cho
+            self._woodbury_inv = w_inv
+            self._woodbury_vec = self.nus - w_inv.dot(self._k_mat).dot(self.nus)
         self.is_fitted = True
+
+    @property
+    def log_likelihood_contrib(self):
+        """Contribution to the log-marginal likelihood of the model."""
+        # Note: this is *not* equal to the log of the marginal likelihood of the
+        # regression model. See "stable computation of the marginal likelihood"
+        # in the notes.
+        if not self.is_fitted:
+            raise RuntimeError("new data since last call to `fit()`")
+        # C.f. Rasmussen and Williams' GPML book, eqs. (3.73) and (3.74).
+        return (-np.sum(np.log(np.diag(self._b_cholesky)))
+                + 0.5 * np.dot(self.nus, np.dot(self._cov, self.nus)))
 
     def predict(self, ts):
         if not self.is_fitted:
