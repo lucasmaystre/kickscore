@@ -47,8 +47,8 @@ class Fitter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def fit(self):
-        pass
+        """Fit the score model given the available data."""
 
     @abc.abstractmethod
     def predict(self, ts):
-        pass
+        """Predict score at new time locations."""

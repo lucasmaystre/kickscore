@@ -52,9 +52,10 @@ class Add(Kernel):
 
     @property
     def noise_effect(self):
-        vecs = [k.noise_effect for k in self.parts]
-        return np.concatenate(vecs)
+        mats = [k.noise_effect for k in self.parts]
+        return block_diag(*mats)
 
     @property
     def noise_density(self):
-        return np.array([k.noise_density for k in self.parts])
+        mats = [k.noise_density for k in self.parts]
+        return block_diag(*mats)

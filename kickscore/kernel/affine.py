@@ -7,7 +7,7 @@ from .kernel import Kernel
 NOISE_COV = np.zeros((2,2))
 MEASUREMENT_VECTOR = np.array([1., 0.])
 FEEDBACK = np.array([[0., 1.], [0., 0.]])
-NOISE_EFFECT = np.array([0., 1.])
+NOISE_EFFECT = np.transpose([[0., 1.]])
 STATE_MEAN = np.zeros(2)
 
 
@@ -70,4 +70,4 @@ class Affine(Kernel):
 
     @property
     def noise_density(self):
-        return 0.0
+        return np.zeros((1, 1))

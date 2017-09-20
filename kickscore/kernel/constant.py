@@ -3,8 +3,8 @@ import numpy as np
 from .kernel import Kernel
 
 
-ARRAY_ZERO = np.array([[0.]])
-ARRAY_ONE = np.array([[1.]])
+MAT_ZERO = np.array([[0.]])
+MAT_ONE = np.array([[1.]])
 VEC_ZERO = np.array([0.])
 VEC_ONE = np.array([1.])
 
@@ -27,16 +27,16 @@ class Constant(Kernel):
         return 1
 
     def transition(self, delta):
-        return ARRAY_ONE
+        return MAT_ONE
 
     def noise_cov(self, delta):
-        return ARRAY_ZERO
+        return MAT_ZERO
 
     def state_mean(self, t):
         return VEC_ZERO
 
     def state_cov(self, t):
-        return self.var * ARRAY_ONE
+        return self.var * MAT_ONE
 
     @property
     def measurement_vector(self):
@@ -44,12 +44,12 @@ class Constant(Kernel):
 
     @property
     def feedback(self):
-        return ARRAY_ZERO
+        return MAT_ZERO
 
     @property
     def noise_effect(self):
-        return VEC_ONE
+        return MAT_ONE
 
     @property
     def noise_density(self):
-        return 0.0
+        return MAT_ZERO

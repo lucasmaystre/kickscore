@@ -23,7 +23,7 @@ class Observation(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def match_moments(self, mean_cav, cov_cav):
-        pass
+        """Compute statistics of the hybrid distribution."""
 
     def ep_update(self, threshold=1e-4):
         # Mean and variance in function space.

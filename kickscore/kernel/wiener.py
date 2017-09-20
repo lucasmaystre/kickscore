@@ -5,8 +5,8 @@ from .kernel import Kernel
 
 VEC_ZERO = np.zeros(1)
 VEC_ONE = np.ones(1)
-ARRAY_ZERO = np.zeros((1, 1))
-ARRAY_ONE = np.ones((1, 1))
+MAT_ZERO = np.zeros((1, 1))
+MAT_ONE = np.ones((1, 1))
 
 
 class Wiener(Kernel):
@@ -37,16 +37,16 @@ class Wiener(Kernel):
         return 1
 
     def transition(self, delta):
-        return ARRAY_ONE
+        return MAT_ONE
 
     def noise_cov(self, delta):
-        return self.var * delta * ARRAY_ONE
+        return self.var * delta * MAT_ONE
 
     def state_mean(self, t):
         return VEC_ZERO
 
     def state_cov(self, t):
-        return self.var * (t - self.t0) * ARRAY_ONE
+        return self.var * (t - self.t0) * MAT_ONE
 
     @property
     def measurement_vector(self):
@@ -54,12 +54,12 @@ class Wiener(Kernel):
 
     @property
     def feedback(self):
-        return ARRAY_ZERO
+        return MAT_ZERO
 
     @property
     def noise_effect(self):
-        return VEC_ONE
+        return MAT_ONE
 
     @property
     def noise_density(self):
-        return self.var
+        return np.array([[self.var]])

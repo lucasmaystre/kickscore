@@ -21,7 +21,7 @@ class Model(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def observe(self, *args, **kwargs):
-        pass
+        """Add a new observation to the dataset."""
 
     def fit(self, max_iter=100, verbose=False):
         for item in self._item.values():

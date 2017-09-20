@@ -6,7 +6,7 @@ from .kernel import Kernel
 
 VEC_ZERO = np.zeros(1)
 VEC_ONE = np.ones(1)
-ARRAY_ONE = np.ones((1, 1))
+MAT_ONE = np.ones((1, 1))
 
 
 class Exponential(Kernel):
@@ -29,16 +29,16 @@ class Exponential(Kernel):
         return 1
 
     def transition(self, delta):
-        return exp(-delta / self.lscale) * ARRAY_ONE
+        return exp(-delta / self.lscale) * MAT_ONE
 
     def noise_cov(self, delta):
-        return self.var * (1 - exp(-2 * delta / self.lscale)) * ARRAY_ONE
+        return self.var * (1 - exp(-2 * delta / self.lscale)) * MAT_ONE
 
     def state_mean(self, t):
         return VEC_ZERO
 
     def state_cov(self, t):
-        return self.var * ARRAY_ONE
+        return self.var * MAT_ONE
 
     @property
     def measurement_vector(self):
@@ -46,15 +46,15 @@ class Exponential(Kernel):
 
     @property
     def feedback(self):
-        return (-1 / self.lscale) * ARRAY_ONE
+        return (-1 / self.lscale) * MAT_ONE
 
     @property
     def noise_effect(self):
-        return VEC_ONE
+        return MAT_ONE
 
     @property
     def noise_density(self):
-        return 2 * self.var / self.lscale
+        return np.array([[2 * self.var / self.lscale]])
 
     @property
     def stationary_mean(self):
@@ -62,4 +62,4 @@ class Exponential(Kernel):
 
     @property
     def stationary_cov(self):
-        return self.var * ARRAY_ONE
+        return self.var * MAT_ONE

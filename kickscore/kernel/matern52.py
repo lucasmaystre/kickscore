@@ -5,7 +5,7 @@ from .kernel import Kernel
 
 
 MEASUREMENT_VECTOR = np.array([1., 0., 0.])
-NOISE_EFFECT = np.array([0., 0., 1.])
+NOISE_EFFECT = np.transpose([[0., 0., 1.]])
 STATIONARY_MEAN = np.zeros(3)
 
 
@@ -96,7 +96,7 @@ class Matern52(Kernel):
 
     @property
     def noise_density(self):
-        return (16 / 3) * self.var * self.lambda_**5
+        return np.array([[(16 / 3) * self.var * self.lambda_**5]])
 
     @property
     def stationary_mean(self):
