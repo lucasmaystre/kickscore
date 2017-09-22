@@ -1,0 +1,36 @@
+// A test case which emulates a one-dimensional GP classification problem. This
+// enables us to generate ground-truth data using GPy. I used the following
+// code.
+//
+//     kernel = GPy.kern.Matern32(input_dim=1, variance=2.0, lengthscale=1.0)
+//     m = GPy.models.GPClassification(
+//             GPY_DATA["ts"][:,None], GPY_DATA["ys"][:,None], kernel)
+//     mean, var = m.predict_noiseless(GPY_DATA["ts"][:,None])
+//     loglik = m.log_likelihood()
+{
+    "model_class": "BinaryModel",
+    "items": [
+        {"name": "x", "kernel_class": "Matern32", "kernel_args": {"var": 2.0, "lscale": 1.0}}
+    ],
+    "observations": [
+        {"winners": [], "losers": ["x"], "t": 0.11616722},
+        {"winners": ["x"], "losers": [], "t": 0.31198904},
+        {"winners": ["x"], "losers": [], "t": 0.31203728},
+        {"winners": ["x"], "losers": [], "t": 0.74908024},
+        {"winners": ["x"], "losers": [], "t": 1.19731697},
+        {"winners": [], "losers": ["x"], "t": 1.20223002},
+        {"winners": ["x"], "losers": [], "t": 1.41614516},
+        {"winners": [], "losers": ["x"], "t": 1.46398788},
+        {"winners": ["x"], "losers": [], "t": 1.73235229},
+        {"winners": [], "losers": ["x"], "t": 1.90142861}
+    ],
+    "scores": {
+        "x": {
+            "mean": [0.31360008, 0.5563249, 0.55637697, 0.69265769, 0.31460952,
+                    0.31025632, 0.14610304, 0.11367125, -0.04366288, -0.15818941],
+            "var": [0.50323764, 0.41926517, 0.41926308, 0.47346879, 0.32169469,
+                    0.3199826, 0.28991614, 0.29480962, 0.38651489, 0.5172971]
+        }
+    },
+    "log_likelihood": -8.4713680700883938
+}

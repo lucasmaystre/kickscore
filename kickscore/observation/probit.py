@@ -27,7 +27,6 @@ class ProbitTieObservation(Observation):
         return _match_moments_probit_tie(mean_cav, cov_cav, self._margin)
 
 
-
 # Some magic constants for a stable computation of logphi(z).
 CS = [
   0.00048204, -0.00142906, 0.0013200243174, 0.0009461589032, -0.0045563339802,

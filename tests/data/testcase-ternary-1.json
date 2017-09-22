@@ -1,0 +1,28 @@
+// A basic test case for the ternary model.
+// Ground-truth computed using kickscore at revision `66beee380`.
+{
+    "model_class": "TernaryModel",
+    "model_args": {"margin": 0.3},
+    "items": [
+        {"name": "audrey", "kernel_class": "Matern52", "kernel_args": {"var": 2.0, "lscale": 1.0}},
+        {"name": "benjamin", "kernel_class": "Matern52", "kernel_args": {"var": 2.0, "lscale": 1.0}}
+    ],
+    "observations": [
+        {"winners": ["audrey"], "losers": ["benjamin"], "t": 0.0},
+        {"winners": ["audrey"], "losers": ["benjamin"], "t": 1.0, "tie": true},
+        {"winners": ["audrey"], "losers": ["benjamin"], "t": 1.5, "tie": true},
+        {"winners": ["audrey"], "losers": ["benjamin"], "t": 2.0, "tie": true},
+        {"winners": ["benjamin"], "losers": ["audrey"], "t": 3.0}
+    ],
+    "scores": {
+        "audrey": {
+            "mean": [0.929822857, 0.226395487, 0.0, -0.226395487, -0.929822857],
+            "var": [1.1802523, 0.5057798, 0.39952505, 0.5057798, 1.1802523]
+        },
+        "benjamin": {
+            "mean": [-0.929822857, -0.226395487, 0.0, 0.226395487, 0.929822857],
+            "var": [1.1802523, 0.5057798, 0.39952505, 0.5057798, 1.1802523]
+        }
+    },
+    "log_likelihood": -8.2743049121991934
+}

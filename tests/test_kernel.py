@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from kickscore.kernel import *
 from kickscore.kernel.kernel import Kernel
@@ -68,47 +69,47 @@ GROUND_TRUTH = {
 }
 
 
-def test_kernel_matrix():
+@pytest.mark.parametrize("name", KERNEL.keys())
+def test_kernel_matrix(name):
     """`k_mat` should match the output of GPy."""
-    for name in KERNEL:
-        assert np.allclose(KERNEL[name].k_mat(TS), GROUND_TRUTH[name])
+    assert np.allclose(KERNEL[name].k_mat(TS), GROUND_TRUTH[name])
 
 
-def test_kernel_diag():
+@pytest.mark.parametrize("kernel", KERNEL.values())
+def test_kernel_diag(kernel):
     """`k_diag` should match the diagonal of `k_mat`."""
     ts = 10 * np.random.random(10)
-    for k in KERNEL.values():
-        assert np.allclose(np.diag(k.k_mat(ts)), k.k_diag(ts))
+    assert np.allclose(np.diag(kernel.k_mat(ts)), kernel.k_diag(ts))
 
 
-def test_kernel_order():
+@pytest.mark.parametrize("kernel", KERNEL.values())
+def test_kernel_order(kernel):
     """The SSM matrices & vectors should have the correct dims."""
-    for k in KERNEL.values():
-        m = k.order
-        assert k.state_mean(0.0).shape == (m,)
-        assert k.state_cov(0.0).shape == (m, m)
-        assert k.measurement_vector.shape == (m,)
-        assert k.feedback.shape == (m, m)
-        assert k.noise_effect.shape[0] == m
-        assert k.transition(1.0).shape == (m, m)
-        assert k.noise_cov(1.0).shape == (m, m)
+    m = kernel.order
+    assert kernel.state_mean(0.0).shape == (m,)
+    assert kernel.state_cov(0.0).shape == (m, m)
+    assert kernel.measurement_vector.shape == (m,)
+    assert kernel.feedback.shape == (m, m)
+    assert kernel.noise_effect.shape[0] == m
+    assert kernel.transition(1.0).shape == (m, m)
+    assert kernel.noise_cov(1.0).shape == (m, m)
 
 
-def test_ssm_variance():
+@pytest.mark.parametrize("kernel", KERNEL.values())
+def test_ssm_variance(kernel):
     """The measured state variance should match `k_diag`."""
     ts = 10 * np.random.random(10)
-    for k in KERNEL.values():
-        h = k.measurement_vector
-        vars_ = [h.dot(k.state_cov(t)).dot(h) for t in ts]
-        assert np.allclose(vars_, k.k_diag(ts))
+    h = kernel.measurement_vector
+    vars_ = [h.dot(kernel.state_cov(t)).dot(h) for t in ts]
+    assert np.allclose(vars_, kernel.k_diag(ts))
 
 
-def test_ssm_matrices():
+@pytest.mark.parametrize("kernel", KERNEL.values())
+def test_ssm_matrices(kernel):
     """`transition` and `noise_cov` should match the numerical solution.`"""
     deltas = [0.01, 1.0, 10.0]
-    for k in KERNEL.values():
-        for delta in deltas:
-            assert np.allclose(
-                    Kernel.transition(k, delta), k.transition(delta))
-            assert np.allclose(
-                    Kernel.noise_cov(k, delta), k.noise_cov(delta))
+    for delta in deltas:
+        assert np.allclose(
+                Kernel.transition(kernel, delta), kernel.transition(delta))
+        assert np.allclose(
+                Kernel.noise_cov(kernel, delta), kernel.noise_cov(delta))
