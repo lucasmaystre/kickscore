@@ -2,7 +2,6 @@ import numpy as np
 
 from .fitter import Fitter
 from math import log
-from scipy.linalg import cho_factor, cho_solve
 
 
 class RecursiveFitter(Fitter):
@@ -24,6 +23,8 @@ class RecursiveFitter(Fitter):
     def allocate(self):
         """Overrides `Fitter.allocate` to allocate the SSM-related matrices."""
         n_new = len(self.ts_new)
+        if n_new == 0:
+            return
         # Usual variables.
         self.ts = np.concatenate((self.ts, self.ts_new))
         self.means = np.concatenate((self.means, np.zeros(n_new)))
@@ -82,8 +83,7 @@ class RecursiveFitter(Fitter):
                 m_s[i] = m_f[i]
                 P_s[i] = P_f[i]
             else:
-                cho_fact = cho_factor(P_p[i+1])
-                G = cho_solve(cho_fact, A[i].dot(P_f[i])).T
+                G = np.linalg.solve(P_p[i+1], A[i].dot(P_f[i])).T
                 m_s[i] = m_f[i] + G.dot(m_s[i+1] - m_p[i+1])
                 P_s[i] = P_f[i] + G.dot(P_s[i+1] - P_p[i+1]).dot(G.T)
             mean[i] = h.dot(m_s[i])
@@ -145,8 +145,7 @@ class RecursiveFitter(Fitter):
                 # RTS update using the right neighbor.
                 dt = self.ts[j+1] - ts[i]
                 A = self.kernel.transition(dt)
-                cho_fact = cho_factor(P_p[j+1])
-                G = cho_solve(cho_fact, A.dot(P)).T
+                G = np.linalg.solve(P_p[j+1], A.dot(P)).T
                 mean[i] = h.dot(m + G.dot(m_s[j+1] - m_p[j+1]))
                 var[i] = h.dot(P + G.dot(P_s[j+1] - P_p[j+1]).dot(G.T)).dot(h)
         return (mean, var)
