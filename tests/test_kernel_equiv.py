@@ -12,9 +12,8 @@ from kickscore.kernel import *
 
 
 TRAIN_TS = np.array([1.32, 3.95, 4.47, 5.14, 5.49, 5.54, 6.41, 9.50])
-OBSERVATIONS = zip(
-        np.array([0.65, 0.53, 0.64, 0.99, -0.99, -0.64, 0.00, 0.00]),
-        np.array([0.20, 0.16, 0.21, 1.45, 1.00, 0.21, 0.00, 0.20]))
+OBS_NUS = np.array([0.65, 0.53, 0.64, 0.99, -0.99, -0.64, 0.00, 0.00])
+OBS_TAUS = np.array([0.20, 0.16, 0.21, 1.45, 1.00, 0.21, 0.00, 0.20])
 TEST_TS = np.array([1.0, 5.14, 7.0, 11.0])
 
 KERNELS = (
@@ -39,7 +38,7 @@ def test_equivalence(kernel):
         _ = recur.add_sample(t)
     batch.allocate()
     recur.allocate()
-    for i, (nu, tau) in enumerate(OBSERVATIONS):
+    for i, (nu, tau) in enumerate(zip(OBS_NUS, OBS_TAUS)):
         batch.nus[i] = nu
         batch.taus[i] = tau
         recur.nus[i] = nu
