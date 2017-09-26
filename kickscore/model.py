@@ -40,6 +40,8 @@ class Model(metaclass=abc.ABCMeta):
                 if verbose:
                     print()
                 return True
+        if verbose:
+            print()
         return False  # Did not converge after `max_iter`.
 
     @property
