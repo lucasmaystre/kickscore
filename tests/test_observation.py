@@ -1,6 +1,9 @@
 import numpy as np
 
+from kickscore.item import Item
+from kickscore.kernel import Constant
 from kickscore.observation.observation import Observation
+
 from math import log, pi, sqrt
 from scipy.stats import norm
 
@@ -18,11 +21,13 @@ def test_log_likelihood_contrib():
     cov_cav = 0.6
     logpart = 1.4
     # Setup the observation.
-    obs = DummyObservation({}, {}, 0.0)
-    obs._tau = 1 / var
-    obs._nu = mean / var
-    obs._mean_cav = mean_cav
-    obs._cov_cav = cov_cav
+    item = Item(Constant(1.0), "batch")
+    obs = DummyObservation([(item, 1.0)], 0.0)
+    item.fitter.allocate()
+    item.fitter.taus[0] = 1 / var
+    item.fitter.nus[0] = mean / var
+    obs._elems_tau_cav[0] = 1 / cov_cav
+    obs._elems_nu_cav[0] = mean_cav / cov_cav
     obs._logpart = logpart
     # Ground truth is log( Z / N(m1 | m2, v1 + v2) ), see notes.
     ground_truth = logpart - log(norm.pdf(

@@ -6,8 +6,8 @@ from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
 
 class ProbitObservation(Observation):
 
-    def __init__(self, winners, losers, t, margin=None):
-        super().__init__(winners, losers, t)
+    def __init__(self, elems, t, margin=None):
+        super().__init__(elems, t)
         self._margin = margin
 
     def match_moments(self, mean_cav, cov_cav):
@@ -19,8 +19,8 @@ class ProbitObservation(Observation):
 
 class ProbitTieObservation(Observation):
 
-    def __init__(self, items1, items2, t, margin):
-        super().__init__(items1, items2, t)
+    def __init__(self, elems, t, margin):
+        super().__init__(elems, t)
         self._margin = margin
 
     def match_moments(self, mean_cav, cov_cav):

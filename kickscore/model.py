@@ -1,5 +1,4 @@
 import abc
-import itertools
 
 from .observation import ProbitObservation, ProbitTieObservation
 from .item import Item
@@ -50,11 +49,11 @@ class Model(metaclass=abc.ABCMeta):
                 + sum(i.fitter.log_likelihood_contrib
                         for i in self.item.values()))
 
-    def process_items(self, items):
+    def process_items(self, items, sign=+1):
         if isinstance(items, dict):
-            return {self.item[k]: float(v) for k, v in items.items()}
+            return [(self.item[k], sign * float(v)) for k, v in items.items()]
         if isinstance(items, list) or isinstance(items, tuple):
-            return {self.item[k]: 1.0 for k in items}
+            return [(self.item[k], sign) for k in items]
         else:
             raise ValueError("items should be a list, a tuple or a dict")
 
@@ -68,14 +67,11 @@ class BinaryModel(Model):
         if t < self.last_t:
             raise ValueError(
                     "observations must be added in chronological order")
-        winners = self.process_items(winners)
-        losers = self.process_items(losers)
-        if len(winners) + len(losers) == 0:
-            raise ValueError(
-                    "at least one winner or one loser is required")
-        obs = ProbitObservation(winners=winners, losers=losers, t=t)
+        elems = (self.process_items(winners, sign=+1)
+                + self.process_items(losers, sign=-1))
+        obs = ProbitObservation(elems, t=t)
         self.observations.append(obs)
-        for item in itertools.chain(winners.keys(), losers.keys()):
+        for item, _ in elems:
             item.link_observation(obs)
 
 
@@ -91,19 +87,14 @@ class TernaryModel(Model):
                     "observations must be added in chronological order")
         if margin is None:
             margin = self.margin
-        winners = self.process_items(winners)
-        losers = self.process_items(losers)
-        if len(winners) + len(losers) == 0:
-            raise ValueError(
-                    "at least one winner or one loser is required")
+        elems = (self.process_items(winners, sign=+1)
+                + self.process_items(losers, sign=-1))
         if tie:
-            obs = ProbitTieObservation(
-                    items1=winners, items2=losers, t=t, margin=margin)
+            obs = ProbitTieObservation(elems, t=t, margin=margin)
         else:
-            obs = ProbitObservation(
-                    winners=winners, losers=losers, t=t, margin=margin)
+            obs = ProbitObservation(elems, t=t, margin=margin)
         self.observations.append(obs)
-        for item in itertools.chain(winners.keys(), losers.keys()):
+        for item, _ in elems:
             item.link_observation(obs)
 
 # Future models
