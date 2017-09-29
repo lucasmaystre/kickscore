@@ -61,7 +61,7 @@ def test_allocation(fitter):
     fitter.allocate()
     assert fitter.is_allocated
     # Check that arrays have the appropriate size.
-    for attr in ("ts", "means", "vars", "nus", "taus"):
+    for attr in ("ts", "ms", "vs", "ns", "xs"):
         assert len(getattr(fitter, attr)) == 16
 
 
@@ -72,16 +72,17 @@ def test_against_gpy(fitter):
     for t in DATA["ts_train"]:
         fitter.add_sample(t)
     fitter.allocate()
-    fitter.taus[:] = 1 / DATA["vs"]
-    fitter.nus[:] = DATA["ys"] / DATA["vs"]
+    fitter.xs[:] = 1 / DATA["vs"]
+    fitter.ns[:] = DATA["ys"] / DATA["vs"]
     fitter.fit()
     # Estimation.
-    assert np.allclose(fitter.means, DATA["mean"])
-    assert np.allclose(fitter.vars, DATA["var"])
+    print(fitter.ms)
+    assert np.allclose(fitter.ms, DATA["mean"])
+    assert np.allclose(fitter.vs, DATA["var"])
     # Prediction.
-    means, vars = fitter.predict(DATA["ts_pred"])
-    assert np.allclose(means, DATA["mean_pred"])
-    assert np.allclose(vars, DATA["var_pred"])
+    ms, vs = fitter.predict(DATA["ts_pred"])
+    assert np.allclose(ms, DATA["mean_pred"])
+    assert np.allclose(vs, DATA["var_pred"])
     # Log-likelihood.
     ll = fitter.log_likelihood_contrib
     # We need to add the unstable terms that cancel out with the EP
@@ -95,14 +96,14 @@ def test_against_gpy(fitter):
         "fitter", (BatchFitter(KERNEL), RecursiveFitter(KERNEL)))
 def test_stability(fitter):
     """The fitter should handle infinite-variance observations."""
-    nus = np.array([0.0, 0.0, 0.0])
-    taus = np.array([100.0, 0.001, 0.0])
+    ns = np.array([0.0, 0.0, 0.0])
+    xs = np.array([100.0, 0.001, 0.0])
     for t in range(3):
         fitter.add_sample(t)
     fitter.allocate()
-    fitter.taus[:] = taus
-    fitter.nus[:] = nus
+    fitter.xs[:] = xs
+    fitter.ns[:] = ns
     fitter.fit()
-    assert all(np.isfinite(fitter.means))
-    assert all(np.isfinite(fitter.vars))
+    assert all(np.isfinite(fitter.ms))
+    assert all(np.isfinite(fitter.vs))
     assert np.isfinite(fitter.log_likelihood_contrib)

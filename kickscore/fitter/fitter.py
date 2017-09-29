@@ -10,11 +10,11 @@ class Fitter(metaclass=abc.ABCMeta):
         self.ts_new = list()
         self.kernel = kernel
         # Arrays to be allocated later.
-        self.ts = np.zeros(0)
-        self.means = np.zeros(0)
-        self.vars = np.zeros(0)
-        self.nus = np.zeros(0)
-        self.taus = np.zeros(0)
+        self.ts = np.zeros(0)  # Timestamps.
+        self.ms = np.zeros(0)  # Means.
+        self.vs = np.zeros(0)  # Variances.
+        self.ns = np.zeros(0)  # Precision-adjusted means of pseudo-obs.
+        self.xs = np.zeros(0)  # Precision of pseudo-obs.
         # State of the fitter.
         self.is_fitted = False
 
@@ -26,12 +26,12 @@ class Fitter(metaclass=abc.ABCMeta):
 
     def allocate(self):
         n_new = len(self.ts_new)
+        zeros = np.zeros(n_new)
         self.ts = np.concatenate((self.ts, self.ts_new))
-        self.means = np.concatenate((self.means, np.zeros(n_new)))
-        self.vars = np.concatenate(
-                (self.vars, self.kernel.k_diag(self.ts_new)))
-        self.nus = np.concatenate((self.nus, np.zeros(n_new)))
-        self.taus = np.concatenate((self.taus, np.zeros(n_new)))
+        self.ms = np.concatenate((self.ms, zeros))
+        self.vs = np.concatenate((self.vs, self.kernel.k_diag(self.ts_new)))
+        self.ns = np.concatenate((self.ns, zeros))
+        self.xs = np.concatenate((self.xs, zeros))
         # Clear the list of pending samples.
         self.ts_new = list()
 
@@ -43,7 +43,7 @@ class Fitter(metaclass=abc.ABCMeta):
     def posterior(self):
         if not self.is_fitted:
             raise RuntimeError("new data since last call to `fit()`")
-        return (self.ts, self.means, self.vars)
+        return (self.ts, self.ms, self.vs)
 
     @abc.abstractmethod
     def fit(self):

@@ -1,7 +1,7 @@
 import abc
 
-from .observation import ProbitObservation, ProbitTieObservation
 from .item import Item
+from .observation import ProbitObservation, ProbitTieObservation
 
 
 class Model(metaclass=abc.ABCMeta):

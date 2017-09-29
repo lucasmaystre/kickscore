@@ -27,21 +27,22 @@ class BatchFitter(Fitter):
             raise RuntimeError("new data since last call to `allocate()`")
         if len(self.ts) > 0:
             # Stable computation of the woodbury inverse.
-            xs = np.sqrt(self.taus)
+            xs_sqrt = np.sqrt(self.xs)
             b_cho = np.linalg.cholesky(
-                    np.eye(len(self.ts)) + np.outer(xs, xs) * self._k_mat)
+                    np.eye(len(self.ts))
+                    + np.outer(xs_sqrt, xs_sqrt) * self._k_mat)
             mat = solve_triangular(
-                    b_cho, np.diag(xs), lower=True, overwrite_b=True)
+                    b_cho, np.diag(xs_sqrt), lower=True, overwrite_b=True)
             w_inv = np.transpose(mat).dot(mat)
             # Recompute mean and covariance.
             cov = self._k_mat - self._k_mat.dot(w_inv).dot(self._k_mat)
-            self.means = np.dot(cov, self.nus)
-            self.vars = np.diag(cov)
+            self.ms = np.dot(cov, self.ns)
+            self.vs = np.diag(cov)
             # Store some quantities for prediction and marginal likelihood).
             self._cov = cov
             self._b_cholesky = b_cho
             self._woodbury_inv = w_inv
-            self._woodbury_vec = self.nus - w_inv.dot(self._k_mat).dot(self.nus)
+            self._woodbury_vec = self.ns - w_inv.dot(self._k_mat).dot(self.ns)
         self.is_fitted = True
 
     @property
@@ -54,7 +55,7 @@ class BatchFitter(Fitter):
             raise RuntimeError("new data since last call to `fit()`")
         # C.f. Rasmussen and Williams' GPML book, eqs. (3.73) and (3.74).
         return (-np.sum(np.log(np.diag(self._b_cholesky)))
-                + 0.5 * np.dot(self.nus, np.dot(self._cov, self.nus)))
+                + 0.5 * np.dot(self.ns, np.dot(self._cov, self.ns)))
 
     def predict(self, ts):
         if not self.is_fitted:

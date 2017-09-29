@@ -12,8 +12,8 @@ from kickscore.kernel import *
 
 
 TRAIN_TS = np.array([1.32, 3.95, 4.47, 5.14, 5.49, 5.54, 6.41, 9.50])
-OBS_NUS = np.array([0.65, 0.53, 0.64, 0.99, -0.99, -0.64, 0.00, 0.00])
-OBS_TAUS = np.array([0.20, 0.16, 0.21, 1.45, 1.00, 0.21, 0.00, 0.20])
+OBS_NS = np.array([0.65, 0.53, 0.64, 0.99, -0.99, -0.64, 0.00, 0.00])
+OBS_XS = np.array([0.20, 0.16, 0.21, 1.45, 1.00, 0.21, 0.00, 0.20])
 TEST_TS = np.array([1.0, 5.14, 7.0, 11.0])
 
 KERNELS = (
@@ -38,18 +38,18 @@ def test_equivalence(kernel):
         _ = recur.add_sample(t)
     batch.allocate()
     recur.allocate()
-    for i, (nu, tau) in enumerate(zip(OBS_NUS, OBS_TAUS)):
-        batch.nus[i] = nu
-        batch.taus[i] = tau
-        recur.nus[i] = nu
-        recur.taus[i] = tau
+    for i, (n, x) in enumerate(zip(OBS_NS, OBS_XS)):
+        batch.ns[i] = n
+        batch.xs[i] = x
+        recur.ns[i] = n
+        recur.xs[i] = x
     batch.fit()
     recur.fit()
     # Estimated mean and variance at training points.
-    assert np.allclose(batch.means, recur.means)
-    assert np.allclose(batch.vars, recur.vars)
+    assert np.allclose(batch.ms, recur.ms)
+    assert np.allclose(batch.vs, recur.vs)
     # Predicted mean and var at new test points.
-    means_b, vars_b = batch.predict(TEST_TS)
-    means_r, vars_r = recur.predict(TEST_TS)
-    assert np.allclose(means_b, means_r)
-    assert np.allclose(vars_b, vars_r)
+    ms_b, vs_b = batch.predict(TEST_TS)
+    ms_r, vs_r = recur.predict(TEST_TS)
+    assert np.allclose(ms_b, ms_r)
+    assert np.allclose(vs_b, vs_r)

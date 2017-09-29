@@ -1,7 +1,32 @@
+import numba
 import numpy as np
 
 from .fitter import Fitter
 from math import log
+
+
+@numba.jit(nopython=True)
+def _fit(ts, ms, vs, ns, xs, h, I, A, Q, m_p, P_p, m_f, P_f, m_s, P_s):
+    # Forward pass (Kalman filter).
+    for i in range(len(ts)):
+        if i > 0:
+            m_p[i] = np.dot(A[i-1], m_f[i-1])
+            P_p[i] = np.dot(np.dot(A[i-1], P_f[i-1]), A[i-1].T) + Q[i-1]
+        # These are slightly modified equations to work with tau and nu.
+        k = np.dot(P_p[i], h) / (1 + xs[i] * np.dot(np.dot(h, P_p[i]), h))
+        m_f[i] = m_p[i] + k * (ns[i] - xs[i] * np.dot(h, m_p[i]))
+        P_f[i] = np.dot(I - np.outer(xs[i] * k, h), P_p[i])
+    # Backward pass (RTS smoother).
+    for i in range(len(ts) - 1, -1, -1):
+        if i == len(ts) - 1:
+            m_s[i] = m_f[i]
+            P_s[i] = P_f[i]
+        else:
+            G = np.linalg.solve(P_p[i+1], np.dot(A[i], P_f[i])).T
+            m_s[i] = m_f[i] + np.dot(G, m_s[i+1] - m_p[i+1])
+            P_s[i] = P_f[i] + np.dot(np.dot(G, P_s[i+1] - P_p[i+1]), G.T)
+        ms[i] = np.dot(h, m_s[i])
+        vs[i] = np.dot(np.dot(h, P_s[i]), h)
 
 
 class RecursiveFitter(Fitter):
@@ -26,12 +51,12 @@ class RecursiveFitter(Fitter):
         if n_new == 0:
             return
         # Usual variables.
+        zeros = np.zeros(n_new)
         self.ts = np.concatenate((self.ts, self.ts_new))
-        self.means = np.concatenate((self.means, np.zeros(n_new)))
-        self.vars = np.concatenate(
-                (self.vars, self.kernel.k_diag(self.ts_new)))
-        self.nus = np.concatenate((self.nus, np.zeros(n_new)))
-        self.taus = np.concatenate((self.taus, np.zeros(n_new)))
+        self.ms = np.concatenate((self.ms, zeros))
+        self.vs = np.concatenate((self.vs, self.kernel.k_diag(self.ts_new)))
+        self.ns = np.concatenate((self.ns, zeros))
+        self.xs = np.concatenate((self.xs, zeros))
         # Initialize the predictive, filtering and smoothing distributions.
         mean = np.array([self.kernel.state_mean(t) for t in self.ts_new])
         cov = np.array([self.kernel.state_cov(t) for t in self.ts_new])
@@ -61,34 +86,12 @@ class RecursiveFitter(Fitter):
         if len(self.ts) == 0:
             self.is_fitted = True
             return
-        # Rename variables for conciseness.
-        mean, var = self.means, self.vars
-        nu, tau = self.nus, self.taus
-        h, I, A, Q = self._h, self._I, self._A, self._Q
-        m_p, P_p = self._m_p, self._P_p
-        m_f, P_f = self._m_f, self._P_f
-        m_s, P_s = self._m_s, self._P_s
-        # Forward pass (Kalman filter).
-        for i in range(len(self.ts)):
-            if i > 0:
-                m_p[i] = A[i-1].dot(m_f[i-1])
-                P_p[i] = A[i-1].dot(P_f[i-1]).dot(A[i-1].T) + Q[i-1]
-            # These are slightly modified equations to work with tau and nu.
-            k = P_p[i].dot(h) / (1 + tau[i] * h.dot(P_p[i]).dot(h))
-            m_f[i] = m_p[i] + k * (nu[i] - tau[i] * np.dot(h, m_p[i]))
-            P_f[i] = (I - np.outer(tau[i] * k, h)).dot(P_p[i])
-        # Backward pass (RTS smoother).
-        for i in range(len(self.ts) - 1, -1, -1):
-            if i == len(self.ts) - 1:
-                m_s[i] = m_f[i]
-                P_s[i] = P_f[i]
-            else:
-                G = np.linalg.solve(P_p[i+1], A[i].dot(P_f[i])).T
-                m_s[i] = m_f[i] + G.dot(m_s[i+1] - m_p[i+1])
-                P_s[i] = P_f[i] + G.dot(P_s[i+1] - P_p[i+1]).dot(G.T)
-            mean[i] = h.dot(m_s[i])
-            var[i] = h.dot(P_s[i]).dot(h)
-        # set self.means and self.vars
+        _fit(
+                ts=self.ts, ms=self.ms, vs=self.vs, ns=self.ns, xs=self.xs,
+                h=self._h, I=self._I, A=self._A, Q=self._Q,
+                m_p=self._m_p, P_p=self._P_p,
+                m_f=self._m_f, P_f=self._P_f,
+                m_s=self._m_s, P_s=self._P_s)
         self.is_fitted = True
 
     @property
@@ -101,21 +104,21 @@ class RecursiveFitter(Fitter):
             raise RuntimeError("new data since last call to `fit()`")
         h = self._h
         m_p, P_p = self._m_p, self._P_p
-        nu, tau = self.nus, self.taus
+        ns, xs = self.ns, self.xs
         val = 0.0
         for i in range(len(self.ts)):
-            v = h.dot(m_p[i])
-            x = h.dot(P_p[i]).dot(h)
-            val += -0.5 * (log(tau[i] * x  + 1.0)
-                    + (-nu[i]**2 * x - 2 * nu[i] * v + tau[i] * v**2)
-                    / (tau[i] * x + 1))
+            o = h.dot(m_p[i])
+            v = h.dot(P_p[i]).dot(h)
+            val += -0.5 * (log(xs[i] * v  + 1.0)
+                    + (-ns[i]**2 * v - 2 * ns[i] * o + xs[i] * o**2)
+                    / (xs[i] * v + 1))
         return val
 
     def predict(self, ts):
         if not self.is_fitted:
             raise RuntimeError("new data since last call to `fit()`")
-        mean = np.zeros(len(ts))
-        var = np.zeros(len(ts))
+        ms = np.zeros(len(ts))
+        vs = np.zeros(len(ts))
         h = self._h
         m_p, P_p = self._m_p, self._P_p
         m_f, P_f = self._m_f, self._P_f
@@ -127,8 +130,8 @@ class RecursiveFitter(Fitter):
                 dt = ts[i] - self.ts[-1]
                 A = self.kernel.transition(dt)
                 Q = self.kernel.noise_cov(dt)
-                mean[i] = h.dot(np.dot(A, m_s[-1]))
-                var[i] = h.dot(A.dot(P_s[-1]).dot(A.T) + Q).dot(h)
+                ms[i] = h.dot(np.dot(A, m_s[-1]))
+                vs[i] = h.dot(A.dot(P_s[-1]).dot(A.T) + Q).dot(h)
             else:
                 j = nxt - 1
                 if j < 0:
@@ -146,6 +149,6 @@ class RecursiveFitter(Fitter):
                 dt = self.ts[j+1] - ts[i]
                 A = self.kernel.transition(dt)
                 G = np.linalg.solve(P_p[j+1], A.dot(P)).T
-                mean[i] = h.dot(m + G.dot(m_s[j+1] - m_p[j+1]))
-                var[i] = h.dot(P + G.dot(P_s[j+1] - P_p[j+1]).dot(G.T)).dot(h)
-        return (mean, var)
+                ms[i] = h.dot(m + G.dot(m_s[j+1] - m_p[j+1]))
+                vs[i] = h.dot(P + G.dot(P_s[j+1] - P_p[j+1]).dot(G.T)).dot(h)
+        return (ms, vs)
