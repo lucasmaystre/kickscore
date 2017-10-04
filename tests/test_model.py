@@ -1,6 +1,7 @@
 import json
 import kickscore as ks
 import numpy as np
+import pytest
 
 
 def test_json_example(testcase_path):
@@ -22,3 +23,12 @@ def test_json_example(testcase_path):
         assert np.allclose(scores["mean"], mean)
         assert np.allclose(scores["var"], var)
     assert np.allclose(model.log_likelihood, data["log_likelihood"])
+
+
+@pytest.mark.parametrize("model", [ks.BinaryModel(), ks.TernaryModel()])
+def test_chronological_order(model):
+    """Observations can only be added in chronological order."""
+    model.add_item("x", kernel=ks.kernel.Constant(1.0))
+    model.observe(winners=["x"], losers=[], t=1.0)
+    with pytest.raises(ValueError):
+        model.observe(winners=["x"], losers=[], t=0.0)

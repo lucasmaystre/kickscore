@@ -75,6 +75,7 @@ class BinaryModel(Model):
         self.observations.append(obs)
         for item, _ in elems:
             item.link_observation(obs)
+        self.last_t = t
 
 
 class TernaryModel(Model):
@@ -98,6 +99,7 @@ class TernaryModel(Model):
         self.observations.append(obs)
         for item, _ in elems:
             item.link_observation(obs)
+        self.last_t = t
 
 # Future models
 #def observe_count(self, count, attack, defense, t):
