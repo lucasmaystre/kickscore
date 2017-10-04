@@ -15,7 +15,9 @@ def _fit(ts, ms, vs, ns, xs, h, I, A, Q, m_p, P_p, m_f, P_f, m_s, P_s):
         # These are slightly modified equations to work with tau and nu.
         k = np.dot(P_p[i], h) / (1 + xs[i] * np.dot(np.dot(h, P_p[i]), h))
         m_f[i] = m_p[i] + k * (ns[i] - xs[i] * np.dot(h, m_p[i]))
-        P_f[i] = np.dot(I - np.outer(xs[i] * k, h), P_p[i])
+        # Covariance matrix is computed using the Joseph form.
+        Z = I - np.outer(xs[i] * k, h)
+        P_f[i] = np.dot(np.dot(Z, P_p[i]), Z.T) + xs[i] * np.outer(k, k)
     # Backward pass (RTS smoother).
     for i in range(len(ts) - 1, -1, -1):
         if i == len(ts) - 1:
