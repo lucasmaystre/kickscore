@@ -44,6 +44,10 @@ class Model(metaclass=abc.ABCMeta):
             print()
         return False  # Did not converge after `max_iter`.
 
+    @abc.abstractmethod
+    def probabilities(self, *args, **kwargs):
+        """Compute the probability of outcomes."""
+
     @property
     def log_likelihood(self):
         """Log-marginal likelihood of the model."""
@@ -77,6 +81,12 @@ class BinaryModel(Model):
             item.link_observation(obs)
         self.last_t = t
 
+    def probabilities(self, team1, team2, t):
+        elems = (self.process_items(team1, sign=+1)
+                + self.process_items(team2, sign=-1))
+        prob = ProbitObservation.probability(elems, t)
+        return (prob, 1 - prob)
+
 
 class TernaryModel(Model):
 
@@ -100,6 +110,15 @@ class TernaryModel(Model):
         for item, _ in elems:
             item.link_observation(obs)
         self.last_t = t
+
+    def probabilities(self, team1, team2, t, margin=None):
+        if margin is None:
+            margin = self.margin
+        elems = (self.process_items(team1, sign=+1)
+                + self.process_items(team2, sign=-1))
+        prob1 = ProbitObservation.probability(elems, t, margin)
+        prob2 = ProbitTieObservation.probability(elems, t, margin)
+        return (prob1, prob2, 1 - prob1 - prob2)
 
 # Future models
 #def observe_count(self, count, attack, defense, t):

@@ -25,6 +25,10 @@ class Observation(metaclass=abc.ABCMeta):
     def match_moments(self, mean_cav, cov_cav):
         """Compute statistics of the hybrid distribution."""
 
+    @abc.abstractstaticmethod
+    def probability(*args, **kwargs):
+        """Compute the probability of the outcome described by `elems`."""
+
     def ep_update(self, damping=1.0, threshold=1e-4):
         # Mean and variance of the cavity distribution in function space.
         f_mean_cav = 0

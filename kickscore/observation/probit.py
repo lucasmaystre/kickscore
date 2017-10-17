@@ -96,6 +96,17 @@ class ProbitObservation(Observation):
     def match_moments(self, mean_cav, cov_cav):
         return _match_moments_probit(mean_cav - self._margin, cov_cav)
 
+    @staticmethod
+    def probability(elems, t, margin=0):
+        ts = np.array([t])
+        m, v = 0.0, 0.0
+        for item, coeff in elems:
+            ms, vs = item.predict(ts)
+            m += coeff * ms[0]
+            v += coeff * coeff * vs[0]
+        logpart, _, _ = _match_moments_probit(m - margin, v)
+        return exp(logpart)
+
 
 class ProbitTieObservation(Observation):
 
@@ -105,3 +116,14 @@ class ProbitTieObservation(Observation):
 
     def match_moments(self, mean_cav, cov_cav):
         return _match_moments_probit_tie(mean_cav, cov_cav, self._margin)
+
+    @staticmethod
+    def probability(elems, t, margin):
+        ts = np.array([t])
+        m, v = 0.0, 0.0
+        for item, coeff in elems:
+            ms, vs = item.predict(ts)
+            m += coeff * ms[0]
+            v += coeff * coeff * vs[0]
+        logpart, _, _ = _match_moments_probit_tie(m, v, margin)
+        return exp(logpart)
