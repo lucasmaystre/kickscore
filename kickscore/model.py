@@ -22,7 +22,7 @@ class Model(metaclass=abc.ABCMeta):
     def observe(self, *args, **kwargs):
         """Add a new observation to the dataset."""
 
-    def fit(self, max_iter=100, verbose=False):
+    def fit(self, damping=1.0, max_iter=100, verbose=False):
         for item in self._item.values():
             item.fitter.allocate()
         for _ in range(max_iter):
@@ -31,7 +31,7 @@ class Model(metaclass=abc.ABCMeta):
             converged = list()
             # Recompute the Gaussian pseudo-observations.
             for obs in self.observations:
-                c = obs.ep_update()
+                c = obs.ep_update(damping=damping)
                 converged.append(c)
             # Recompute the posterior of the score processes.
             for item in self.item.values():

@@ -25,7 +25,7 @@ class Observation(metaclass=abc.ABCMeta):
     def match_moments(self, mean_cav, cov_cav):
         """Compute statistics of the hybrid distribution."""
 
-    def ep_update(self, threshold=1e-4):
+    def ep_update(self, damping=1.0, threshold=1e-4):
         # Mean and variance of the cavity distribution in function space.
         f_mean_cav = 0
         f_var_cav = 0
@@ -61,8 +61,10 @@ class Observation(metaclass=abc.ABCMeta):
             if (abs(x - item.fitter.xs[idx]) > threshold
                     or abs(n - item.fitter.ns[idx]) > threshold):
                 converged = False
-            item.fitter.xs[idx] = x
-            item.fitter.ns[idx] = n
+            item.fitter.xs[idx] = ((1 - damping) * item.fitter.xs[idx]
+                    + damping * x)
+            item.fitter.ns[idx] = ((1 - damping) * item.fitter.ns[idx]
+                    + damping * n)
         # Save log partition function value for the log-likelihood.
         self._logpart = logpart
         return converged

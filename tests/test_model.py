@@ -32,3 +32,18 @@ def test_chronological_order(model):
     model.observe(winners=["x"], losers=[], t=1.0)
     with pytest.raises(ValueError):
         model.observe(winners=["x"], losers=[], t=0.0)
+
+
+def test_damping():
+    """Damping should work on a simple example."""
+    kernel = ks.kernel.Constant(1.0)
+    model = ks.BinaryModel()
+    for x in ["A", "B", "C", "D"]:
+        model.add_item(x, kernel=kernel)
+    model.observe(winners=["C", "D"], losers=["A", "B"], t=0.0)
+    model.observe(winners=["A", "B"], losers=["C", "D"], t=0.0)
+    model.observe(winners=["A", "B"], losers=["C", "D"], t=0.0)
+    # Without damping, this simple example diverges.
+    assert not model.fit(max_iter=20)
+    # However, a little bit of damping is enough to make it converge.
+    assert model.fit(max_iter=20, damping=0.8)
