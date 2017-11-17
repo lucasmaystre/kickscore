@@ -27,7 +27,12 @@ setup(
         "Topic :: Games/Entertainment",
     ],
     keywords="elo ranking skill score rating strength game",
-    packages=["kickscore"],
+    packages=[
+        "kickscore",
+        "kickscore.fitter",
+        "kickscore.kernel",
+        "kickscore.observation",
+    ],
     install_requires=[
         "numpy",
         "scipy",
