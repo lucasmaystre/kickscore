@@ -11,7 +11,10 @@ from scipy.stats import norm
 class DummyObservation(Observation):
 
     def match_moments(self, mean_cav, cov_cav):
-        return 1.0, 2.0, 3.0
+        pass
+
+    def probability():
+        pass
 
 
 def test_log_likelihood_contrib():
