@@ -107,3 +107,12 @@ def test_stability(fitter):
     assert all(np.isfinite(fitter.ms))
     assert all(np.isfinite(fitter.vs))
     assert np.isfinite(fitter.log_likelihood_contrib)
+
+
+@pytest.mark.parametrize(
+        "fitter", (BatchFitter(KERNEL), RecursiveFitter(KERNEL)))
+def test_no_data(fitter):
+    """The fitter should correctly handle the "no-data" case."""
+    fitter.fit()
+    fitter.predict(np.array([1.0, 2.0]))
+    assert fitter.log_likelihood_contrib == 0

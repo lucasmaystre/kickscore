@@ -49,6 +49,10 @@ class Fitter(metaclass=abc.ABCMeta):
     def fit(self):
         """Fit the score model given the available data."""
 
+    @abc.abstractproperty
+    def log_likelihood_contrib(self):
+        """Contribution to the log marginal likelihood of the model."""
+
     @abc.abstractmethod
     def predict(self, ts):
         """Predict score at new time locations."""

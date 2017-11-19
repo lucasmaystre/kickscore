@@ -119,6 +119,8 @@ class RecursiveFitter(Fitter):
     def predict(self, ts):
         if not self.is_fitted:
             raise RuntimeError("new data since last call to `fit()`")
+        if len(self.ts) == 0:
+            return (np.zeros_like(ts), self.kernel.k_diag(ts))
         ms = np.zeros(len(ts))
         vs = np.zeros(len(ts))
         h = self._h
