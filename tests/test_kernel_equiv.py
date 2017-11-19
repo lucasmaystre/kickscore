@@ -23,6 +23,7 @@ KERNELS = (
     Matern52(0.2, 5.0),
     Affine(var_offset=1.0, var_slope=2.0, t0=-0.3),
     Wiener(1.2, 0.3),
+    Wiener(1.32, 1.0, var_t0=1.0),
     Constant(0.3) + Matern32(1.5, 0.7) + Matern32(0.2, 5.0),
 )
 

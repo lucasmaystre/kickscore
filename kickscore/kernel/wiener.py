@@ -13,24 +13,26 @@ class Wiener(Kernel):
 
     """Kernel of a Wiener process.
 
-    In practice, it should probably be used in conjunction with a constant
-    (a.k.a. bias) kernel so that the variance at t = 0 is positive.
+    For convenience, it is also possible to specify an additional positive
+    variance at t0 (this allows to circumvent some numerical issues).
     """
 
-    def __init__(self, var, t0):
+    def __init__(self, var, t0, var_t0=0.0):
         self.var = var
         self.t0 = t0
+        self.var_t0 = var_t0
 
     def k_mat(self, ts1, ts2=None):
         if ts2 is None:
             ts2 = ts1
         ts1 = np.asarray(ts1)
         ts2 = np.asarray(ts2)
-        return self.var * (np.fmin(ts1[:,None], ts2[None,:]) - self.t0)
+        return (self.var * (np.fmin(ts1[:,None], ts2[None,:]) - self.t0)
+                + self.var_t0)
 
     def k_diag(self, ts):
         ts = np.asarray(ts)
-        return self.var * (ts - self.t0)
+        return self.var * (ts - self.t0) + self.var_t0
 
     @property
     def order(self):
@@ -46,7 +48,7 @@ class Wiener(Kernel):
         return VEC_ZERO
 
     def state_cov(self, t):
-        return self.var * (t - self.t0) * MAT_ONE
+        return (self.var * (t - self.t0) + self.var_t0) * MAT_ONE
 
     @property
     def measurement_vector(self):
