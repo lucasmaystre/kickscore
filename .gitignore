@@ -11,7 +11,7 @@
 
 # Other.
 /.eggs/
-/_meta/
+/_novcs/
 .cache/
 
 # Sphinx-generated doc.
