@@ -25,23 +25,20 @@ class Model(metaclass=abc.ABCMeta):
     def fit(self, damping=1.0, max_iter=100, verbose=False):
         for item in self._item.values():
             item.fitter.allocate()
-        for _ in range(max_iter):
-            if verbose:
-                print(".", end="", flush=True)
-            converged = list()
+        for i in range(max_iter):
+            max_diff = 0.0
             # Recompute the Gaussian pseudo-observations.
             for obs in self.observations:
-                c = obs.ep_update(damping=damping)
-                converged.append(c)
+                diff = obs.ep_update(damping=damping)
+                max_diff = max(max_diff, diff)
             # Recompute the posterior of the score processes.
             for item in self.item.values():
                 item.fitter.fit()
-            if all(converged):
-                if verbose:
-                    print()
+            if verbose:
+                print("iteration {}, max diff: {:.5f}".format(
+                        i+1, max_diff), flush=True)
+            if max_diff < 1e-3:
                 return True
-        if verbose:
-            print()
         return False  # Did not converge after `max_iter`.
 
     @abc.abstractmethod

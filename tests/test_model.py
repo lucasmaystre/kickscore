@@ -20,9 +20,9 @@ def test_json_example(testcase_path):
     model.fit()
     for name, scores in data["scores"].items():
         _, mean, var = model.item[name].scores
-        assert np.allclose(scores["mean"], mean)
-        assert np.allclose(scores["var"], var)
-    assert np.allclose(model.log_likelihood, data["log_likelihood"])
+        assert np.allclose(scores["mean"], mean, rtol=1e-3)
+        assert np.allclose(scores["var"], var, rtol=1e-3)
+    assert np.allclose(model.log_likelihood, data["log_likelihood"], rtol=1e-3)
 
 
 @pytest.mark.parametrize("model", [ks.BinaryModel(), ks.TernaryModel()])

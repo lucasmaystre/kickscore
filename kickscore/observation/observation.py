@@ -29,7 +29,7 @@ class Observation(metaclass=abc.ABCMeta):
     def probability(*args, **kwargs):
         """Compute the probability of the outcome described by `elems`."""
 
-    def ep_update(self, damping=1.0, threshold=1e-4):
+    def ep_update(self, damping=1.0):
         # Mean and variance of the cavity distribution in function space.
         f_mean_cav = 0
         f_var_cav = 0
@@ -50,7 +50,6 @@ class Observation(metaclass=abc.ABCMeta):
         # Moment matching.
         logpart, dlogpart, d2logpart = self.match_moments(
                 f_mean_cav, f_var_cav)
-        converged = True
         for i in range(self._M):
             item = self._items[i]
             idx = self._indices[i]
@@ -62,16 +61,14 @@ class Observation(metaclass=abc.ABCMeta):
             x = -coeff * coeff * d2logpart / denom
             n = (coeff * (dlogpart - coeff * (n_cav / x_cav) * d2logpart)
                     / denom)
-            if (abs(x - item.fitter.xs[idx]) > threshold
-                    or abs(n - item.fitter.ns[idx]) > threshold):
-                converged = False
             item.fitter.xs[idx] = ((1 - damping) * item.fitter.xs[idx]
                     + damping * x)
             item.fitter.ns[idx] = ((1 - damping) * item.fitter.ns[idx]
                     + damping * n)
+        diff = abs(self._logpart - logpart)
         # Save log partition function value for the log-likelihood.
         self._logpart = logpart
-        return converged
+        return diff
 
     @property
     def log_likelihood_contrib(self):
