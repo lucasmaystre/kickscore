@@ -62,68 +62,43 @@ def _logphi(z):
 
 
 @numba.jit(nopython=True)
-def _match_moments_probit(mean_cav, cov_cav):
+def _match_moments_probit(em, ev, mm, mv):
     # Adapted from the GPML function `likErf.m`.
-    z = mean_cav / sqrt(1 + cov_cav)
+    z = (em - mm) / sqrt(1 + ev + mv)
     logpart, val = _logphi(z)
-    dlogpart = val / sqrt(1 + cov_cav)  # 1st derivative w.r.t. mean.
-    d2logpart = -val * (z + val) / (1 + cov_cav)
-    return logpart, dlogpart, d2logpart
+    dlogpart = val / sqrt(1 + ev + mv)  # 1st derivative w.r.t. elems mean.
+    d2logpart = -val * (z + val) / (1 + ev + mv)
+    return logpart, dlogpart, d2logpart, -dlogpart, d2logpart
 
 
 @numba.jit(nopython=True)
-def _match_moments_probit_tie(mean_cav, cov_cav, margin):
+def _match_moments_probit_tie(em, ev, mm, mv):
     # TODO This is probably numerically unstable.
-    denom = sqrt(1 + cov_cav)
-    z1 = (mean_cav + margin) / denom
-    z2 = (mean_cav - margin) / denom
+    denom = sqrt(1 + ev + mv)
+    z1 = (em + mm) / denom
+    z2 = (em - mm) / denom
     Phi1 = _normcdf(z1)
     Phi2 = _normcdf(z2)
     v1 = _normpdf(z1)
     v2 = _normpdf(z2)
     logpart = log(Phi1 - Phi2)
-    dlogpart = (v1 - v2) / (denom * (Phi1 - Phi2))
-    d2logpart = (-z1 * v1 + z2 * v2) / ((1 + cov_cav) * (Phi1 - Phi2)) - dlogpart**2
-    return logpart, dlogpart, d2logpart
+    dlogpart_e = (v1 - v2) / (denom * (Phi1 - Phi2))
+    dlogpart_m = (v1 + v2) / (denom * (Phi1 - Phi2))
+    tmp = (-z1 * v1 + z2 * v2) / ((1 + ev + mv) * (Phi1 - Phi2))
+    d2logpart_e = tmp - dlogpart_e**2
+    d2logpart_m = tmp - dlogpart_m**2
+    return logpart, dlogpart_e, d2logpart_e, dlogpart_m, d2logpart_m
 
 
-class ProbitObservation(Observation):
-
-    def __init__(self, elems, t, margin=0):
-        super().__init__(elems, t)
-        self._margin = margin
-
-    def match_moments(self, mean_cav, cov_cav):
-        return _match_moments_probit(mean_cav - self._margin, cov_cav)
+class ProbitWinObservation(Observation):
 
     @staticmethod
-    def probability(elems, t, margin=0):
-        ts = np.array([t])
-        m, v = 0.0, 0.0
-        for item, coeff in elems:
-            ms, vs = item.predict(ts)
-            m += coeff * ms[0]
-            v += coeff * coeff * vs[0]
-        logpart, _, _ = _match_moments_probit(m - margin, v)
-        return exp(logpart)
+    def match_moments(em, ev, mm, mv):
+        return _match_moments_probit(em, ev, mm, ev)
 
 
 class ProbitTieObservation(Observation):
 
-    def __init__(self, elems, t, margin):
-        super().__init__(elems, t)
-        self._margin = margin
-
-    def match_moments(self, mean_cav, cov_cav):
-        return _match_moments_probit_tie(mean_cav, cov_cav, self._margin)
-
     @staticmethod
-    def probability(elems, t, margin):
-        ts = np.array([t])
-        m, v = 0.0, 0.0
-        for item, coeff in elems:
-            ms, vs = item.predict(ts)
-            m += coeff * ms[0]
-            v += coeff * coeff * vs[0]
-        logpart, _, _ = _match_moments_probit_tie(m, v, margin)
-        return exp(logpart)
+    def match_moments(em, ev, mm, mv):
+        return _match_moments_probit_tie(em, ev, mm, ev)

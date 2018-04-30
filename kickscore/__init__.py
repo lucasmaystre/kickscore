@@ -19,7 +19,6 @@ Example usage:
 from . import kernel
 
 from .model import (
-    BinaryModel,
     TernaryModel,
 )
 

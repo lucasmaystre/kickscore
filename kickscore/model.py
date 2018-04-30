@@ -1,7 +1,7 @@
 import abc
 
 from .item import Item
-from .observation import ProbitObservation, ProbitTieObservation
+from .observation import ProbitWinObservation, ProbitTieObservation
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -61,65 +61,36 @@ class Model(metaclass=abc.ABCMeta):
             raise ValueError("items should be a list, a tuple or a dict")
 
 
-class BinaryModel(Model):
-
-    def __init__(self):
-        super().__init__()
-
-    def observe(self, winners, losers, t):
-        if t < self.last_t:
-            raise ValueError(
-                    "observations must be added in chronological order")
-        elems = (self.process_items(winners, sign=+1)
-                + self.process_items(losers, sign=-1))
-        obs = ProbitObservation(elems, t=t)
-        self.observations.append(obs)
-        for item, _ in elems:
-            item.link_observation(obs)
-        self.last_t = t
-
-    def probabilities(self, team1, team2, t):
-        elems = (self.process_items(team1, sign=+1)
-                + self.process_items(team2, sign=-1))
-        prob = ProbitObservation.probability(elems, t)
-        return (prob, 1 - prob)
-
-
 class TernaryModel(Model):
 
-    def __init__(self, margin=0.1):
+    def __init__(self, base_margin):
         super().__init__()
-        self.margin = margin
+        self.base_margin = base_margin
 
-    def observe(self, winners, losers, t, tie=False, margin=None):
+    def observe(self, winners, losers, margin, t, tie=False):
         if t < self.last_t:
             raise ValueError(
                     "observations must be added in chronological order")
-        if margin is None:
-            margin = self.margin
         elems = (self.process_items(winners, sign=+1)
                 + self.process_items(losers, sign=-1))
+        margin = self.process_items(margin, sign=+1)
         if tie:
-            obs = ProbitTieObservation(elems, t=t, margin=margin)
+            obs = ProbitTieObservation(
+                    elems, margin, t=t, base_margin=self.base_margin)
         else:
-            obs = ProbitObservation(elems, t=t, margin=margin)
+            obs = ProbitWinObservation(
+                    elems, margin, t=t, base_margin=self.base_margin)
         self.observations.append(obs)
         for item, _ in elems:
             item.link_observation(obs)
         self.last_t = t
 
-    def probabilities(self, team1, team2, t, margin=None):
-        if margin is None:
-            margin = self.margin
+    def probabilities(self, team1, team2, margin, t):
         elems = (self.process_items(team1, sign=+1)
                 + self.process_items(team2, sign=-1))
-        prob1 = ProbitObservation.probability(elems, t, margin)
-        prob2 = ProbitTieObservation.probability(elems, t, margin)
+        margin = self.process_items(margin, sign=+1)
+        prob1 = ProbitWinObservation.probability(
+                    elems, margin, t=t, base_margin=self.base_margin)
+        prob2 = ProbitTieObservation.probability(
+                    elems, margin, t=t, base_margin=self.base_margin)
         return (prob1, prob2, 1 - prob1 - prob2)
-
-# Future models
-#def observe_count(self, count, attack, defense, t):
-#    raise NotImplementedError()
-#
-#def observe_diff(self, diff, winners, losers, t):
-#    raise NotImplementedError()

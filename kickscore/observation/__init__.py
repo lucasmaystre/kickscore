@@ -1,4 +1,4 @@
 from .probit import (
-    ProbitObservation,
+    ProbitWinObservation,
     ProbitTieObservation,
 )
