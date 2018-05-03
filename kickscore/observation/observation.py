@@ -1,7 +1,7 @@
 import abc
 import numpy as np
 
-from math import log
+from math import log, exp
 
 
 class Observation(metaclass=abc.ABCMeta):
@@ -47,7 +47,7 @@ class Observation(metaclass=abc.ABCMeta):
             mm += coeff * ms[0]
             mv += coeff * coeff * vs[0]
         logpart, _, _, _, _ = cls.match_moments(
-                em, ev, mm + self.base_margin, mv)
+                em, ev, mm + base_margin, mv)
         return exp(logpart)
 
     def ep_update(self, damping=1.0):
