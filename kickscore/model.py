@@ -67,30 +67,33 @@ class TernaryModel(Model):
         super().__init__()
         self.base_margin = base_margin
 
-    def observe(self, winners, losers, margin, t, tie=False):
+    def observe(self, winners, losers, margin_w, margin_l, t, tie=False):
         if t < self.last_t:
             raise ValueError(
                     "observations must be added in chronological order")
         elems = (self.process_items(winners, sign=+1)
                 + self.process_items(losers, sign=-1))
-        margin = self.process_items(margin, sign=+1)
+        margin_w = self.process_items(margin_w, sign=+1)
+        margin_l = self.process_items(margin_l, sign=+1)
         if tie:
             obs = ProbitTieObservation(
-                    elems, margin, t=t, base_margin=self.base_margin)
+                    elems, margin_w, margin_l, t=t,
+                    base_margin=self.base_margin)
         else:
             obs = ProbitWinObservation(
-                    elems, margin, t=t, base_margin=self.base_margin)
+                    elems, margin_l, t=t, base_margin=self.base_margin)
         self.observations.append(obs)
         for item, _ in elems:
             item.link_observation(obs)
         self.last_t = t
 
-    def probabilities(self, team1, team2, margin, t):
+    def probabilities(self, team1, team2, margin1, margin2, t):
         elems = (self.process_items(team1, sign=+1)
                 + self.process_items(team2, sign=-1))
-        margin = self.process_items(margin, sign=+1)
+        margin1 = self.process_items(margin1, sign=+1)
+        margin2 = self.process_items(margin2, sign=+1)
         prob1 = ProbitWinObservation.probability(
-                    elems, margin, t=t, base_margin=self.base_margin)
+                    elems, margin2, t=t, base_margin=self.base_margin)
         prob2 = ProbitTieObservation.probability(
-                    elems, margin, t=t, base_margin=self.base_margin)
+                    elems, margin1, margin2, t=t, base_margin=self.base_margin)
         return (prob1, prob2, 1 - prob1 - prob2)
