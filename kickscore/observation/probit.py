@@ -86,7 +86,6 @@ def _match_moments_probit_tie(em, ev, mm1, mv1, mm2, mv2):
     dlogpart_e = (v1 / denom1 - v2 / denom2) / (Phi1 - Phi2)
     d2logpart_e = ((-z1 * v1 / (1 + ev + mv1) + z2 * v2 / (1 + ev + mv2))
             / (Phi1 - Phi2) - dlogpart_e * dlogpart_e)
-    dlogpart_m = (v1 + v2) / (denom * (Phi1 - Phi2))
     _, dlogpart_m1, d2logpart_m1, _, _ = _match_moments_probit(
             mm1, mv1, -em, ev)
     _, _, _, dlogpart_m2, d2logpart_m2 = _match_moments_probit(
@@ -124,7 +123,7 @@ class ProbitWinObservation(Observation):
 
     @staticmethod
     def match_moments(em, ev, mm, mv):
-        return _match_moments_probit(em, ev, mm, ev)
+        return _match_moments_probit(em, ev, mm, mv)
 
     @classmethod
     def probability(cls, elems, margin, t, base_margin):
@@ -234,8 +233,8 @@ class ProbitTieObservation(Observation):
         self._logpart = 0
 
     @staticmethod
-    def match_moments(em, ev, mm, mv):
-        return _match_moments_probit_tie(em, ev, mm, ev)
+    def match_moments(em, ev, mm1, mv1, mm2, mv2):
+        return _match_moments_probit_tie(em, ev, mm1, mv1, mm2, mv2)
 
     @classmethod
     def probability(cls, elems, margin1, margin2, t, base_margin):
