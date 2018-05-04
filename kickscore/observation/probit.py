@@ -94,11 +94,11 @@ class ProbitWinObservation(Observation):
 
     @staticmethod
     def match_moments(em, ev, mm, mv):
-        return _match_moments_probit(em, ev, mm, ev)
+        return _match_moments_probit(em, ev, mm, mv)
 
 
 class ProbitTieObservation(Observation):
 
     @staticmethod
     def match_moments(em, ev, mm, mv):
-        return _match_moments_probit_tie(em, ev, mm, ev)
+        return _match_moments_probit_tie(em, ev, mm, mv)
