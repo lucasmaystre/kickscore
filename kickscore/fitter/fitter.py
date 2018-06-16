@@ -16,7 +16,7 @@ class Fitter(metaclass=abc.ABCMeta):
         self.ns = np.zeros(0)  # Precision-adjusted means of pseudo-obs.
         self.xs = np.zeros(0)  # Precision of pseudo-obs.
         # State of the fitter.
-        self.is_fitted = False
+        self.is_fitted = True  # Zero samples -> model is "fitted".
 
     def add_sample(self, t):
         idx = len(self.ts) + len(self.ts_new)
