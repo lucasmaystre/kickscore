@@ -47,3 +47,12 @@ def test_damping():
     assert not model.fit(max_iter=20)
     # However, a little bit of damping is enough to make it converge.
     assert model.fit(max_iter=20, damping=0.8)
+
+
+def test_add_item_twice():
+    """Item with same name cannot be added again."""
+    kernel = ks.kernel.Constant(1.0)
+    model = ks.BinaryModel()
+    model.add_item("x", kernel)
+    with pytest.raises(ValueError):
+        model.add_item("x", kernel)

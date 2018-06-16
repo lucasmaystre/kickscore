@@ -16,6 +16,8 @@ class Model(metaclass=abc.ABCMeta):
         return self._item
 
     def add_item(self, name, kernel, fitter="batch"):
+        if name in self._item:
+            raise ValueError("item '{}' already added".format(name))
         self._item[name] = Item(kernel=kernel, fitter=fitter)
 
     @abc.abstractmethod
