@@ -24,14 +24,20 @@ class Model(metaclass=abc.ABCMeta):
     def observe(self, *args, **kwargs):
         """Add a new observation to the dataset."""
 
-    def fit(self, damping=1.0, max_iter=100, verbose=False):
+    def fit(self, method="ep", lr=1.0, max_iter=100, verbose=False):
+        if method == "ep":
+            update = lambda obs: obs.ep_update(lr=lr)
+        elif method == "cvi":
+            update = lambda obs: obs.cvi_update(lr=lr)
+        else:
+            raise ValueError("'method' should be one of: 'ep', 'cvi'")
         for item in self._item.values():
             item.fitter.allocate()
         for i in range(max_iter):
             max_diff = 0.0
             # Recompute the Gaussian pseudo-observations.
             for obs in self.observations:
-                diff = obs.ep_update(damping=damping)
+                diff = update(obs)
                 max_diff = max(max_diff, diff)
             # Recompute the posterior of the score processes.
             for item in self.item.values():

@@ -1,0 +1,39 @@
+// A test case which emulates a one-dimensional GP classification problem,
+// using the *Variational Gaussian* approximation. This is based on the
+// `cvi-sanity-check` notebook.
+//
+//     kernel = GPy.kern.Matern32(input_dim=1, variance=2.0, lengthscale=1.0)
+//     kernel.variance.fix()
+//     kernel.lengthscale.fix()
+//     m = GPVariationalGaussianApproximation(
+//         GPY_DATA["ts"][:,None], GPY_DATA["ys"][:,None],
+//         kernel, GPy.likelihoods.Bernoulli())
+//     m.optimize()
+//     mean, var = m.predict_noiseless(GPY_DATA["ts"][:,None])
+{
+    "model_class": "BinaryModel",
+    "items": [
+        {"name": "x", "kernel_class": "Matern32", "kernel_args": {"var": 2.0, "lscale": 1.0}}
+    ],
+    "observations": [
+        {"winners": [], "losers": ["x"], "t": 0.11616722},
+        {"winners": ["x"], "losers": [], "t": 0.31198904},
+        {"winners": ["x"], "losers": [], "t": 0.31203728},
+        {"winners": ["x"], "losers": [], "t": 0.74908024},
+        {"winners": ["x"], "losers": [], "t": 1.19731697},
+        {"winners": [], "losers": ["x"], "t": 1.20223002},
+        {"winners": ["x"], "losers": [], "t": 1.41614516},
+        {"winners": [], "losers": ["x"], "t": 1.46398788},
+        {"winners": ["x"], "losers": [], "t": 1.73235229},
+        {"winners": [], "losers": ["x"], "t": 1.90142861}
+    ],
+    "fit_args": {"method": "cvi", "lr": 0.3},
+    "scores": {
+        "x": {
+            "mean": [0.31351392, 0.55605853, 0.55611057, 0.692318, 0.31443143,
+                     0.31011436, 0.1460632, 0.1136343, -0.0435538, -0.15806632],
+            "var": [0.50034175, 0.41618018, 0.41617809, 0.47086862, 0.32057903,
+                    0.31887721, 0.28890962, 0.29375933, 0.38465678, 0.51458152]
+        }
+    }
+}

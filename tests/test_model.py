@@ -17,12 +17,14 @@ def test_json_example(testcase_path):
         model.add_item(item["name"], kernel=kernel)
     for obs in data["observations"]:
         model.observe(**obs)
-    model.fit()
+    model.fit(**data.get("fit_args", {}))
     for name, scores in data["scores"].items():
         _, mean, var = model.item[name].scores
         assert np.allclose(scores["mean"], mean, rtol=1e-3)
         assert np.allclose(scores["var"], var, rtol=1e-3)
-    assert np.allclose(model.log_likelihood, data["log_likelihood"], rtol=1e-3)
+    if "log_likelihood" in data:
+        assert np.allclose(
+                model.log_likelihood, data["log_likelihood"], rtol=1e-3)
 
 
 @pytest.mark.parametrize("model", [ks.BinaryModel(), ks.TernaryModel()])
@@ -46,7 +48,7 @@ def test_damping():
     # Without damping, this simple example diverges.
     assert not model.fit(max_iter=20)
     # However, a little bit of damping is enough to make it converge.
-    assert model.fit(max_iter=20, damping=0.8)
+    assert model.fit(max_iter=20, lr=0.8)
 
 
 def test_add_item_twice():

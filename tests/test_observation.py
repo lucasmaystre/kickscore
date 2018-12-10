@@ -13,6 +13,9 @@ class DummyObservation(Observation):
     def match_moments(self, mean_cav, cov_cav):
         pass
 
+    def log_likelihood(self, x):
+        pass
+
     def probability():
         pass
 

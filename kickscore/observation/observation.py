@@ -1,7 +1,11 @@
 import abc
 import numpy as np
 
-from math import log
+from math import log, sqrt, pi
+from scipy.integrate import fixed_quad
+
+
+SQRT2PI = sqrt(2.0 * pi)
 
 
 class Observation(metaclass=abc.ABCMeta):
@@ -19,17 +23,22 @@ class Observation(metaclass=abc.ABCMeta):
             self._coeffs[i] = coeff
             self._indices[i] = item.fitter.add_sample(t)
         self.t = t
-        self._logpart = 0
+        self._logpart = 0  # Value of log-partition function, used with EP.
+        self._exp_ll = 0  # Expected log-likelihood, used with CVI.
 
     @abc.abstractmethod
     def match_moments(self, mean_cav, cov_cav):
         """Compute statistics of the hybrid distribution."""
 
+    @abc.abstractmethod
+    def log_likelihood(self, x):
+        """Compute the log-likelihood of the observation."""
+
     @abc.abstractstaticmethod
     def probability(*args, **kwargs):
         """Compute the probability of the outcome described by `elems`."""
 
-    def ep_update(self, damping=1.0):
+    def ep_update(self, lr=1.0):
         # Mean and variance of the cavity distribution in function space.
         f_mean_cav = 0
         f_var_cav = 0
@@ -61,18 +70,60 @@ class Observation(metaclass=abc.ABCMeta):
             x = -coeff * coeff * d2logpart / denom
             n = (coeff * (dlogpart - coeff * (n_cav / x_cav) * d2logpart)
                     / denom)
-            item.fitter.xs[idx] = ((1 - damping) * item.fitter.xs[idx]
-                    + damping * x)
-            item.fitter.ns[idx] = ((1 - damping) * item.fitter.ns[idx]
-                    + damping * n)
+            item.fitter.xs[idx] = (1 - lr) * item.fitter.xs[idx] + lr * x
+            item.fitter.ns[idx] = (1 - lr) * item.fitter.ns[idx] + lr * n
         diff = abs(self._logpart - logpart)
         # Save log partition function value for the log-likelihood.
         self._logpart = logpart
         return diff
 
+    def cvi_expectations(self, mean, var):
+        """Compute the expected log-likelihood and its derivatives."""
+        std = sqrt(var)
+        def f1(x):
+            return self.log_likelihood(std*x + mean)
+        def f2(x):
+            return (self.log_likelihood(std*x + mean)
+                    * (x / std) * np.exp(-x*x / 2.0) / SQRT2PI)
+        def f3(x):
+            return (self.log_likelihood(std*x + mean)
+                    * ((x*x - 1) / (2*var)) * np.exp(-x*x / 2.0) / SQRT2PI)
+        exp_ll, _ = fixed_quad(f1, -7.0, 7.0, n=30)
+        alpha, _ = fixed_quad(f2, -7.0, 7.0, n=30)
+        beta, _ = fixed_quad(f3, -7.0, 7.0, n=30)
+        return exp_ll, alpha, beta
+
+    def cvi_update(self, lr=0.3):
+        # Mean and variance in function space.
+        f_mean = 0
+        f_var = 0
+        for i in range(self._M):
+            item = self._items[i]
+            idx = self._indices[i]
+            coeff = self._coeffs[i]
+            # Adjust the function-space mean & variance.
+            f_mean += coeff * item.fitter.ms[idx]
+            f_var += coeff * coeff * item.fitter.vs[idx]
+        # Compute the derivatives of the exp. log-lik. w.r.t. mean parameters.
+        exp_ll, alpha, beta = self.cvi_expectations(f_mean, f_var)
+        for i in range(self._M):
+            item = self._items[i]
+            idx = self._indices[i]
+            coeff = self._coeffs[i]
+            # Update the elements' parameters.
+            x = -2.0 * coeff * coeff * beta
+            n = coeff * (alpha - 2 * item.fitter.ms[idx] * coeff * beta)
+            item.fitter.xs[idx] = (1 - lr) * item.fitter.xs[idx] + lr * x
+            item.fitter.ns[idx] = (1 - lr) * item.fitter.ns[idx] + lr * n
+        diff = abs(self._exp_ll - exp_ll)
+        # Save the expected log-likelihood.
+        self._exp_ll = exp_ll
+        return diff
+
     @property
     def log_likelihood_contrib(self):
         """Contribution to the log-marginal likelihood of the model."""
+        # TODO This works only for EP at the moment.
         loglik = self._logpart
         for i in range(self._M):
             item = self._items[i]

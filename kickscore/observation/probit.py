@@ -3,6 +3,7 @@ import numpy as np
 
 from .observation import Observation
 from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
+from scipy.special import log_ndtr
 
 
 # Some magic constants for a stable computation of logphi(z).
@@ -37,6 +38,7 @@ def _normcdf(x):
 @numba.jit(nopython=True)
 def _logphi(z):
     # Adapted from the GPML function `logphi.m`.
+    # We cannot use `scipy.special.log_ndtr` because of numba.
     if z * z < 0.0492:
         # First case: z close to zero.
         coef = -z / SQRT2PI
@@ -96,6 +98,9 @@ class ProbitObservation(Observation):
     def match_moments(self, mean_cav, cov_cav):
         return _match_moments_probit(mean_cav - self._margin, cov_cav)
 
+    def log_likelihood(self, x):
+        return log_ndtr(x - self._margin)
+
     @staticmethod
     def probability(elems, t, margin=0):
         ts = np.array([t])
@@ -116,6 +121,9 @@ class ProbitTieObservation(Observation):
 
     def match_moments(self, mean_cav, cov_cav):
         return _match_moments_probit_tie(mean_cav, cov_cav, self._margin)
+
+    def log_likelihood(self, x):
+        return log(_normcdf(x + self._margin) - _normcdf(x - self._margin))
 
     @staticmethod
     def probability(elems, t, margin):
