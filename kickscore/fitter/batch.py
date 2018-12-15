@@ -48,7 +48,7 @@ class BatchFitter(Fitter):
         self.is_fitted = True
 
     @property
-    def log_likelihood_contrib(self):
+    def ep_log_likelihood_contrib(self):
         """Contribution to the log-marginal likelihood of the model."""
         # Note: this is *not* equal to the log of the marginal likelihood of the
         # regression model. See "stable computation of the marginal likelihood"
@@ -60,6 +60,11 @@ class BatchFitter(Fitter):
         # C.f. Rasmussen and Williams' GPML book, eqs. (3.73) and (3.74).
         return (-np.sum(np.log(np.diag(self._b_cholesky)))
                 + 0.5 * np.dot(self.ns, np.dot(self._cov, self.ns)))
+
+    @property
+    def kl_log_likelihood_contrib(self):
+        """Contribution to the log-marginal likelihood of the model."""
+        raise NotImplementedError()
 
     def predict(self, ts):
         if not self.is_fitted:

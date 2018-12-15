@@ -84,7 +84,7 @@ def test_against_gpy(fitter):
     assert np.allclose(ms, DATA["mean_pred"])
     assert np.allclose(vs, DATA["var_pred"])
     # Log-likelihood.
-    ll = fitter.log_likelihood_contrib
+    ll = fitter.ep_log_likelihood_contrib
     # We need to add the unstable terms that cancel out with the EP
     # contributions to the log-likelihood. See appendix of the report.
     ll += sum(-0.5 * log(2 * pi * v) for v in DATA["vs"])
@@ -106,7 +106,9 @@ def test_stability(fitter):
     fitter.fit()
     assert all(np.isfinite(fitter.ms))
     assert all(np.isfinite(fitter.vs))
-    assert np.isfinite(fitter.log_likelihood_contrib)
+    assert np.isfinite(fitter.ep_log_likelihood_contrib)
+    if isinstance(fitter, RecursiveFitter):
+        assert np.isfinite(fitter.kl_log_likelihood_contrib)
 
 
 @pytest.mark.parametrize(
@@ -115,4 +117,6 @@ def test_no_data(fitter):
     """The fitter should correctly handle the "no-data" case."""
     fitter.fit()
     fitter.predict(np.array([1.0, 2.0]))
-    assert fitter.log_likelihood_contrib == 0
+    assert fitter.ep_log_likelihood_contrib == 0
+    if isinstance(fitter, RecursiveFitter):
+        assert fitter.kl_log_likelihood_contrib == 0

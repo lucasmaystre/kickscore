@@ -20,7 +20,7 @@ class DummyObservation(Observation):
         pass
 
 
-def test_log_likelihood_contrib():
+def test_ep_log_likelihood_contrib():
     mean = 0.5
     var = 1.5
     mean_cav = 0.7
@@ -40,7 +40,7 @@ def test_log_likelihood_contrib():
             mean, loc=mean_cav, scale=sqrt(var + cov_cav)))
     # The contribution to the log-likelihood doesn't include unstable terms,
     # they need to be added back to be compared to the ground truth.
-    ll = obs.log_likelihood_contrib
+    ll = obs.ep_log_likelihood_contrib
     ll += 0.5 * log(2 * pi * var)
     ll += 0.5 * mean*mean / var
     assert np.allclose(ll, ground_truth)

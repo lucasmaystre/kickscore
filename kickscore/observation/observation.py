@@ -94,7 +94,7 @@ class Observation(metaclass=abc.ABCMeta):
         beta, _ = fixed_quad(f3, -7.0, 7.0, n=30)
         return exp_ll, alpha, beta
 
-    def cvi_update(self, lr=0.3):
+    def kl_update(self, lr=0.3):
         # Mean and variance in function space.
         f_mean = 0
         f_var = 0
@@ -122,9 +122,8 @@ class Observation(metaclass=abc.ABCMeta):
         return diff
 
     @property
-    def log_likelihood_contrib(self):
+    def ep_log_likelihood_contrib(self):
         """Contribution to the log-marginal likelihood of the model."""
-        # TODO This works only for EP at the moment.
         loglik = self._logpart
         for i in range(self._M):
             item = self._items[i]

@@ -10,12 +10,13 @@ class Model(metaclass=abc.ABCMeta):
         self._item = dict()
         self.last_t = -float("inf")
         self.observations = list()
+        self._last_method = None  # Last method used to fit the model.
 
     @property
     def item(self):
         return self._item
 
-    def add_item(self, name, kernel, fitter="batch"):
+    def add_item(self, name, kernel, fitter="recursive"):
         if name in self._item:
             raise ValueError("item '{}' already added".format(name))
         self._item[name] = Item(kernel=kernel, fitter=fitter)
@@ -24,13 +25,14 @@ class Model(metaclass=abc.ABCMeta):
     def observe(self, *args, **kwargs):
         """Add a new observation to the dataset."""
 
-    def fit(self, method="ep", lr=1.0, max_iter=100, verbose=False):
+    def fit(self, method="ep", lr=1.0, tol=1e-3, max_iter=100, verbose=False):
         if method == "ep":
             update = lambda obs: obs.ep_update(lr=lr)
-        elif method == "cvi":
-            update = lambda obs: obs.cvi_update(lr=lr)
+        elif method == "kl":
+            update = lambda obs: obs.kl_update(lr=lr)
         else:
-            raise ValueError("'method' should be one of: 'ep', 'cvi'")
+            raise ValueError("'method' should be one of: 'ep', 'kl'")
+        self._last_method = method
         for item in self._item.values():
             item.fitter.allocate()
         for i in range(max_iter):
@@ -45,7 +47,7 @@ class Model(metaclass=abc.ABCMeta):
             if verbose:
                 print("iteration {}, max diff: {:.5f}".format(
                         i+1, max_diff), flush=True)
-            if max_diff < 1e-3:
+            if max_diff < tol:
                 return True
         return False  # Did not converge after `max_iter`.
 
@@ -55,17 +57,13 @@ class Model(metaclass=abc.ABCMeta):
 
     @property
     def log_likelihood(self):
-        """Log-marginal likelihood of the model."""
-        return (sum(o.log_likelihood_contrib for o in self.observations)
-                + sum(i.fitter.log_likelihood_contrib
-                        for i in self.item.values()))
-
-    @property
-    def kl_log_likelihood(self):
-        """Lower bound to the log-marginal likelihood."""
-        return (sum(o.kl_log_likelihood_contrib for o in self.observations)
-                + sum(i.fitter.kl_log_likelihood_contrib
-                        for i in self.item.values()))
+        """Estimate of log-marginal likelihood of the model."""
+        if self._last_method == "ep":
+            contrib = lambda x: x.ep_log_likelihood_contrib
+        else:  # self._last_method == "kl"
+            contrib = lambda x: x.kl_log_likelihood_contrib
+        return (sum(contrib(o) for o in self.observations)
+                + sum(contrib(i.fitter) for i in self.item.values()))
 
     def process_items(self, items, sign=+1):
         if isinstance(items, dict):

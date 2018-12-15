@@ -97,7 +97,7 @@ class RecursiveFitter(Fitter):
         self.is_fitted = True
 
     @property
-    def log_likelihood_contrib(self):
+    def ep_log_likelihood_contrib(self):
         """Contribution to the log-marginal likelihood of the model."""
         # Note: this is *not* equal to the log of the marginal likelihood of the
         # regression model. See "stable computation of the marginal likelihood"
