@@ -3,7 +3,7 @@ import numpy as np
 
 from .observation import Observation
 from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
-from scipy.special import log_ndtr
+from scipy.special import ndtr, log_ndtr
 
 
 # Some magic constants for a stable computation of logphi(z).
@@ -123,7 +123,7 @@ class ProbitTieObservation(Observation):
         return _match_moments_probit_tie(mean_cav, cov_cav, self._margin)
 
     def log_likelihood(self, x):
-        return log(_normcdf(x + self._margin) - _normcdf(x - self._margin))
+        return np.log(ndtr(x + self._margin) - ndtr(x - self._margin))
 
     @staticmethod
     def probability(elems, t, margin):
