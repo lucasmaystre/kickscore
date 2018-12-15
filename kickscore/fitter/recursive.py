@@ -116,6 +116,28 @@ class RecursiveFitter(Fitter):
                     / (xs[i] * v + 1))
         return val
 
+    @property
+    def kl_log_likelihood_contrib(self):
+        """Contribution to the log-marginal likelihood of the model."""
+        # Equivalent to the KL-divergence from the posterior to the prior.
+        if not self.is_fitted:
+            raise RuntimeError("new data since last call to `fit()`")
+        h = self._h
+        ns, xs = self.ns, self.xs
+        val = 0.0
+        for i in range(len(self.ts)):
+            # Marginal predictive distribution.
+            mp = np.dot(h, self._m_p[i])
+            vp = np.dot(h, np.dot(h, self._P_p[i]))
+            # Marginal smoothed distribution.
+            ms = np.dot(h, self._m_s[i])
+            vs = np.dot(h, np.dot(h, self._P_s[i]))
+            val += -0.5 * (log(xs[i] * vp + 1)
+                    + xs[i] * (mp*mp - ms*ms - vs)
+                    - 2 * ns[i] * (mp - ms)
+                    - (xs[i]*mp - ns[i])**2 / (1/vp + xs[i]))
+        return val
+
     def predict(self, ts):
         if not self.is_fitted:
             raise RuntimeError("new data since last call to `fit()`")

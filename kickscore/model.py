@@ -60,6 +60,13 @@ class Model(metaclass=abc.ABCMeta):
                 + sum(i.fitter.log_likelihood_contrib
                         for i in self.item.values()))
 
+    @property
+    def kl_log_likelihood(self):
+        """Lower bound to the log-marginal likelihood."""
+        return (sum(o.kl_log_likelihood_contrib for o in self.observations)
+                + sum(i.fitter.kl_log_likelihood_contrib
+                        for i in self.item.values()))
+
     def process_items(self, items, sign=+1):
         if isinstance(items, dict):
             return [(self.item[k], sign * float(v)) for k, v in items.items()]

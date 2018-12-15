@@ -81,7 +81,8 @@ class Observation(metaclass=abc.ABCMeta):
         """Compute the expected log-likelihood and its derivatives."""
         std = sqrt(var)
         def f1(x):
-            return self.log_likelihood(std*x + mean)
+            return (self.log_likelihood(std*x + mean)
+                    * np.exp(-x*x / 2.0) / SQRT2PI)
         def f2(x):
             return (self.log_likelihood(std*x + mean)
                     * (x / std) * np.exp(-x*x / 2.0) / SQRT2PI)
@@ -137,3 +138,8 @@ class Observation(metaclass=abc.ABCMeta):
                     + (-n**2 - 2 * n * n_cav + x * n_cav**2 / x_cav)
                     / (2 * (x + x_cav)))
         return loglik
+
+    @property
+    def kl_log_likelihood_contrib(self):
+        """Contribution to the log-marginal likelihood of the model."""
+        return self._exp_ll
