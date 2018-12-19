@@ -1,11 +1,7 @@
 import abc
 import numpy as np
 
-from math import log, sqrt, pi
-from scipy.integrate import fixed_quad
-
-
-SQRT2PI = sqrt(2.0 * pi)
+from math import log
 
 
 class Observation(metaclass=abc.ABCMeta):
@@ -31,8 +27,8 @@ class Observation(metaclass=abc.ABCMeta):
         """Compute statistics of the hybrid distribution."""
 
     @abc.abstractmethod
-    def log_likelihood(self, x):
-        """Compute the log-likelihood of the observation."""
+    def cvi_expectations(self, mean, var):
+        """Compute the expected log-likelihood and its derivatives."""
 
     @abc.abstractstaticmethod
     def probability(*args, **kwargs):
@@ -76,23 +72,6 @@ class Observation(metaclass=abc.ABCMeta):
         # Save log partition function value for the log-likelihood.
         self._logpart = logpart
         return diff
-
-    def cvi_expectations(self, mean, var):
-        """Compute the expected log-likelihood and its derivatives."""
-        std = sqrt(var)
-        def f1(x):
-            return (self.log_likelihood(std*x + mean)
-                    * np.exp(-x*x / 2.0) / SQRT2PI)
-        def f2(x):
-            return (self.log_likelihood(std*x + mean)
-                    * (x / std) * np.exp(-x*x / 2.0) / SQRT2PI)
-        def f3(x):
-            return (self.log_likelihood(std*x + mean)
-                    * ((x*x - 1) / (2*var)) * np.exp(-x*x / 2.0) / SQRT2PI)
-        exp_ll, _ = fixed_quad(f1, -7.0, 7.0, n=30)
-        alpha, _ = fixed_quad(f2, -7.0, 7.0, n=30)
-        beta, _ = fixed_quad(f3, -7.0, 7.0, n=30)
-        return exp_ll, alpha, beta
 
     def kl_update(self, lr=0.3):
         # Mean and variance in function space.

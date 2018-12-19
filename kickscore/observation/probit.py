@@ -2,8 +2,9 @@ import numba
 import numpy as np
 
 from .observation import Observation
-from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
-from scipy.special import ndtr, log_ndtr
+# Faster than numpy equivalents.
+from math import erfc, exp, log, pi, sqrt, log1p, expm1
+from scipy.special import ndtr, log_ndtr, roots_legendre
 
 
 # Some magic constants for a stable computation of logphi(z).
@@ -89,6 +90,50 @@ def _match_moments_probit_tie(mean_cav, cov_cav, margin):
     return logpart, dlogpart, d2logpart
 
 
+def cvi_expectations(ll_fct):
+    """Add a function that computes the exp. log-lik. and its derivatives."""
+    # Based on the implementation of `scipy.integrate.fixed_quad`.
+    n, a, b = 30, -7.0, 7.0  # Order of quadrature, lower & upper limits.
+    xs, ws = roots_legendre(n)
+    ys = (b - a) * (np.real(xs) + 1) / 2.0 + a
+    c = (b-a)/2.0
+    @numba.jit(nopython=True)
+    def integrals(mean, var, param):
+        std = sqrt(var)
+        exp_ll, alpha, beta = 0.0, 0.0, 0.0
+        for i in range(n):
+            val = (ws[i] * c * ll_fct(std*ys[i] + mean, param)
+                    * exp(-ys[i]*ys[i] / 2.0) / SQRT2PI)
+            exp_ll += val
+            alpha += (ys[i] / std) * val
+            beta += ((ys[i]*ys[i] - 1) / (2*var)) * val
+        return exp_ll, alpha, beta
+    ll_fct.cvi_expectations = integrals
+    return ll_fct
+
+
+@cvi_expectations
+@numba.jit(nopython=True)
+def _log_likelihood_probit(x, margin):
+    """Compute log-likelihood of x under the probit model."""
+    return _logphi(x - margin)[0]
+
+
+@cvi_expectations
+@numba.jit(nopython=True)
+def _log_likelihood_probit_tie(x, margin):
+    """Compute log-likelihood of x under the probit tie model."""
+    # Stable computation log(1 - e^a) c.f.
+    # https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+    x = -abs(x) # Stabilizes computations (likelihood is symmetric).
+    z = _logphi(x + margin)[0]
+    a = _logphi(x - margin)[0] - z
+    if a > -0.693:  # ~= log 2.
+        return z + log(-expm1(a))
+    else:
+        return z + log1p(-exp(a))
+
+
 class ProbitObservation(Observation):
 
     def __init__(self, elems, t, margin=0):
@@ -98,8 +143,8 @@ class ProbitObservation(Observation):
     def match_moments(self, mean_cav, cov_cav):
         return _match_moments_probit(mean_cav - self._margin, cov_cav)
 
-    def log_likelihood(self, x):
-        return log_ndtr(x - self._margin)
+    def cvi_expectations(self, mean, var):
+        return _log_likelihood_probit.cvi_expectations(mean, var, self._margin)
 
     @staticmethod
     def probability(elems, t, margin=0):
@@ -122,8 +167,9 @@ class ProbitTieObservation(Observation):
     def match_moments(self, mean_cav, cov_cav):
         return _match_moments_probit_tie(mean_cav, cov_cav, self._margin)
 
-    def log_likelihood(self, x):
-        return np.log(ndtr(x + self._margin) - ndtr(x - self._margin))
+    def cvi_expectations(self, mean, var):
+        return _log_likelihood_probit_tie.cvi_expectations(
+                mean, var, self._margin)
 
     @staticmethod
     def probability(elems, t, margin):
