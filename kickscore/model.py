@@ -1,7 +1,9 @@
 import abc
 
 from .item import Item
-from .observation import ProbitObservation, ProbitTieObservation
+from .observation import (
+        ProbitWinObservation, ProbitTieObservation,
+        LogitWinObservation, LogitTieObservation)
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -76,8 +78,14 @@ class Model(metaclass=abc.ABCMeta):
 
 class BinaryModel(Model):
 
-    def __init__(self):
+    def __init__(self, obs_type="probit"):
         super().__init__()
+        if obs_type == "probit":
+            self._win_obs = ProbitWinObservation
+        elif obs_type == "logit":
+            self._win_obs = LogitWinObservation
+        else:
+            raise ValueError("unknown observation type: '{}'".format(obs_type))
 
     def observe(self, winners, losers, t):
         if t < self.last_t:
@@ -85,7 +93,7 @@ class BinaryModel(Model):
                     "observations must be added in chronological order")
         elems = (self.process_items(winners, sign=+1)
                 + self.process_items(losers, sign=-1))
-        obs = ProbitObservation(elems, t=t)
+        obs = self._win_obs(elems, t=t)
         self.observations.append(obs)
         for item, _ in elems:
             item.link_observation(obs)
@@ -94,14 +102,22 @@ class BinaryModel(Model):
     def probabilities(self, team1, team2, t):
         elems = (self.process_items(team1, sign=+1)
                 + self.process_items(team2, sign=-1))
-        prob = ProbitObservation.probability(elems, t)
+        prob = self._win_obs.probability(elems, t)
         return (prob, 1 - prob)
 
 
 class TernaryModel(Model):
 
-    def __init__(self, margin=0.1):
+    def __init__(self, margin=0.1, obs_type="probit"):
         super().__init__()
+        if obs_type == "probit":
+            self._win_obs = ProbitWinObservation
+            self._tie_obs = ProbitTieObservation
+        elif obs_type == "logit":
+            self._win_obs = LogitWinObservation
+            self._tie_obs = LogitTieObservation
+        else:
+            raise ValueError("unknown observation type: '{}'".format(obs_type))
         self.margin = margin
 
     def observe(self, winners, losers, t, tie=False, margin=None):
@@ -113,9 +129,9 @@ class TernaryModel(Model):
         elems = (self.process_items(winners, sign=+1)
                 + self.process_items(losers, sign=-1))
         if tie:
-            obs = ProbitTieObservation(elems, t=t, margin=margin)
+            obs = self._tie_obs(elems, t=t, margin=margin)
         else:
-            obs = ProbitObservation(elems, t=t, margin=margin)
+            obs = self._win_obs(elems, t=t, margin=margin)
         self.observations.append(obs)
         for item, _ in elems:
             item.link_observation(obs)
@@ -126,8 +142,8 @@ class TernaryModel(Model):
             margin = self.margin
         elems = (self.process_items(team1, sign=+1)
                 + self.process_items(team2, sign=-1))
-        prob1 = ProbitObservation.probability(elems, t, margin)
-        prob2 = ProbitTieObservation.probability(elems, t, margin)
+        prob1 = self._win_obs.probability(elems, t, margin)
+        prob2 = self._tie_obs.probability(elems, t, margin)
         return (prob1, prob2, 1 - prob1 - prob2)
 
 # Future models

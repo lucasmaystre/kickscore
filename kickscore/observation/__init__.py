@@ -1,4 +1,6 @@
-from .probit import (
-    ProbitObservation,
+from .ordinal import (
+    ProbitWinObservation,
     ProbitTieObservation,
+    LogitWinObservation,
+    LogitTieObservation,
 )

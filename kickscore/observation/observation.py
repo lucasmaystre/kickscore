@@ -121,3 +121,14 @@ class Observation(metaclass=abc.ABCMeta):
     def kl_log_likelihood_contrib(self):
         """Contribution to the log-marginal likelihood of the model."""
         return self._exp_ll
+
+    @staticmethod
+    def f_params(elems, t):
+        """Compute function-space mean and variance."""
+        ts = np.array([t])
+        m, v = 0.0, 0.0
+        for item, coeff in elems:
+            ms, vs = item.predict(ts)
+            m += coeff * ms[0]
+            v += coeff * coeff * vs[0]
+        return m, v
