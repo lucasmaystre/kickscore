@@ -115,3 +115,20 @@ def test_ssm_matrices(kernel):
         assert np.allclose(
                 Kernel.noise_cov(kernel, 0.0, delta),
                 kernel.noise_cov(0.0, delta))
+
+
+def test_simulate_constant():
+    """A sample from a constant GP should be constant."""
+    kernel = Constant(1.0)
+    ts = np.linspace(-2, 7, num=10)
+    xs = kernel.simulate(ts)
+    assert all(xs == xs[0])
+
+
+def test_simulate_affine():
+    """A sample from an affine GP should be affine."""
+    kernel = Affine(var_offset=1.0, t0=0.0, var_slope=1.0)
+    ts = np.linspace(0, 10, num=10)
+    xs = kernel.simulate(ts)
+    slope = (xs[-1] - xs[0]) / 10
+    assert np.allclose(xs, xs[0] + slope * ts)
