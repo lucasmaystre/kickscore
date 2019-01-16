@@ -42,10 +42,10 @@ class Affine(Kernel):
     def order(self):
         return 2
 
-    def transition(self, delta):
-        return np.array([[1., delta], [0., 1.]])
+    def transition(self, t1, t2):
+        return np.array([[1., t2 - t1], [0., 1.]])
 
-    def noise_cov(self, delta):
+    def noise_cov(self, t1, t2):
         return NOISE_COV
 
     def state_mean(self, t):

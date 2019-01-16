@@ -38,11 +38,11 @@ class Wiener(Kernel):
     def order(self):
         return 1
 
-    def transition(self, delta):
+    def transition(self, t1, t2):
         return MAT_ONE
 
-    def noise_cov(self, delta):
-        return self.var * delta * MAT_ONE
+    def noise_cov(self, t1, t2):
+        return self.var * (t2 - t1) * MAT_ONE
 
     def state_mean(self, t):
         return VEC_ZERO

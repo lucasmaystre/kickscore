@@ -24,12 +24,12 @@ class Add(Kernel):
     def order(self):
         return sum(k.order for k in self.parts)
 
-    def transition(self, delta):
-        mats = [k.transition(delta) for k in self.parts]
+    def transition(self, t1, t2):
+        mats = [k.transition(t1, t2) for k in self.parts]
         return block_diag(*mats)
 
-    def noise_cov(self, delta):
-        mats = [k.noise_cov(delta) for k in self.parts]
+    def noise_cov(self, t1, t2):
+        mats = [k.noise_cov(t1, t2) for k in self.parts]
         return block_diag(*mats)
 
     def state_mean(self, t):

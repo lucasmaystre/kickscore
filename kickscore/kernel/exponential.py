@@ -28,11 +28,11 @@ class Exponential(Kernel):
     def order(self):
         return 1
 
-    def transition(self, delta):
-        return exp(-delta / self.lscale) * MAT_ONE
+    def transition(self, t1, t2):
+        return exp(-(t2 - t1) / self.lscale) * MAT_ONE
 
-    def noise_cov(self, delta):
-        return self.var * (1 - exp(-2 * delta / self.lscale)) * MAT_ONE
+    def noise_cov(self, t1, t2):
+        return self.var * (1 - exp(-2 * (t2 - t1) / self.lscale)) * MAT_ONE
 
     def state_mean(self, t):
         return VEC_ZERO

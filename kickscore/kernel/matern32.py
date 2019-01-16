@@ -30,8 +30,8 @@ class Matern32(Kernel):
     def order(self):
         return 2
 
-    def transition(self, delta):
-        d = delta
+    def transition(self, t1, t2):
+        d = t2 - t1
         a = self.lambda_
         A = np.array([
             [d * a + 1, d        ],
@@ -39,8 +39,8 @@ class Matern32(Kernel):
         ])
         return exp(-d * a) * A
 
-    def noise_cov(self, delta):
-        d = delta
+    def noise_cov(self, t1, t2):
+        d = t2 - t1
         a = self.lambda_
         da = d * a
         c = exp(-2 * da)

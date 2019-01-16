@@ -42,13 +42,21 @@ class Kernel(metaclass=abc.ABCMeta):
         """Power spectral density of the noise :math:`\mathbf{Q}`."""
         # Note: usually a scalar, except for combination kernels (e.g., Add).
 
-    def transition(self, delta):
-        """Transition matrix :math:`\mathbf{A}` for a given time interval."""
-        F = self.feedback
-        return sp.linalg.expm(F * delta)
+    def transition(self, t1, t2):
+        """Transition matrix :math:`\mathbf{A}` for a given time interval.
 
-    def noise_cov(self, delta):
-        """Noise covariance matrix :math:`\mathbf{Q}` for a given time interval."""
+        Note that this default implementation assumes that the feedback matrix
+        is independent of time.
+        """
+        F = self.feedback
+        return sp.linalg.expm(F * (t2 - t1))
+
+    def noise_cov(self, t1, t2):
+        """Noise covariance matrix :math:`\mathbf{Q}` for a given time interval.
+
+        Note that this default implementations assumes that the feedback
+        matrix, the noise density and the noise effect are independent of time.
+        """
         # Solution via matrix fraction decomposition, see:
         # - <https://github.com/SheffieldML/GPy/blob/devel/GPy/models/state_space.py#L715>
         # - Särkka's thesis (2006).
@@ -60,7 +68,7 @@ class Kernel(metaclass=abc.ABCMeta):
                 np.hstack((np.zeros_like(mat), -self.feedback.T))))
         print(Phi)
         m = self.order
-        AB = np.dot(sp.linalg.expm(Phi * delta), np.eye(2*m, m, k=-m))
+        AB = np.dot(sp.linalg.expm(Phi * (t2 - t1)), np.eye(2*m, m, k=-m))
         print(AB)
         return sp.linalg.solve(AB[m:,:].T, AB[:m,:].T)
 

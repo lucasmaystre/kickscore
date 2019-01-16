@@ -91,8 +91,8 @@ def test_kernel_order(kernel):
     assert kernel.measurement_vector.shape == (m,)
     assert kernel.feedback.shape == (m, m)
     assert kernel.noise_effect.shape[0] == m
-    assert kernel.transition(1.0).shape == (m, m)
-    assert kernel.noise_cov(1.0).shape == (m, m)
+    assert kernel.transition(0.0, 1.0).shape == (m, m)
+    assert kernel.noise_cov(0.0, 1.0).shape == (m, m)
 
 
 @pytest.mark.parametrize("kernel", KERNEL.values())
@@ -110,6 +110,8 @@ def test_ssm_matrices(kernel):
     deltas = [0.01, 1.0, 10.0]
     for delta in deltas:
         assert np.allclose(
-                Kernel.transition(kernel, delta), kernel.transition(delta))
+                Kernel.transition(kernel, 0.0, delta),
+                kernel.transition(0.0, delta))
         assert np.allclose(
-                Kernel.noise_cov(kernel, delta), kernel.noise_cov(delta))
+                Kernel.noise_cov(kernel, 0.0, delta),
+                kernel.noise_cov(0.0, delta))

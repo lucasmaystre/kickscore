@@ -76,9 +76,8 @@ class RecursiveFitter(Fitter):
             if i == 0:
                 # Very first sample, no need to compute anything.
                 continue
-            dt = self.ts[i] - self.ts[i - 1]
-            self._A[i-1] = self.kernel.transition(dt)
-            self._Q[i-1] = self.kernel.noise_cov(dt)
+            self._A[i-1] = self.kernel.transition(self.ts[i-1], self.ts[i])
+            self._Q[i-1] = self.kernel.noise_cov(self.ts[i-1], self.ts[i])
         # Clear the list of pending samples.
         self.ts_new = list()
 
@@ -153,9 +152,8 @@ class RecursiveFitter(Fitter):
         for i, nxt in enumerate(locations):
             if nxt == len(self.ts):
                 # new point is *after* last observation
-                dt = ts[i] - self.ts[-1]
-                A = self.kernel.transition(dt)
-                Q = self.kernel.noise_cov(dt)
+                A = self.kernel.transition(self.ts[-1], ts[i])
+                Q = self.kernel.noise_cov(self.ts[-1], ts[i])
                 ms[i] = h.dot(np.dot(A, m_s[-1]))
                 vs[i] = h.dot(A.dot(P_s[-1]).dot(A.T) + Q).dot(h)
             else:
@@ -166,14 +164,12 @@ class RecursiveFitter(Fitter):
                 else:
                     # Predictive mean and cov for new point based on left
                     # neighbor.
-                    dt = ts[i] - self.ts[j]
-                    A = self.kernel.transition(dt)
-                    Q = self.kernel.noise_cov(dt)
+                    A = self.kernel.transition(self.ts[j], ts[i])
+                    Q = self.kernel.noise_cov(self.ts[j], ts[i])
                     P = A.dot(P_f[j]).dot(A.T) + Q
                     m = A.dot(m_f[j])
                 # RTS update using the right neighbor.
-                dt = self.ts[j+1] - ts[i]
-                A = self.kernel.transition(dt)
+                A = self.kernel.transition(ts[i], self.ts[j+1])
                 G = np.linalg.solve(P_p[j+1], A.dot(P)).T
                 ms[i] = h.dot(m + G.dot(m_s[j+1] - m_p[j+1]))
                 vs[i] = h.dot(P + G.dot(P_s[j+1] - P_p[j+1]).dot(G.T)).dot(h)

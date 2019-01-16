@@ -30,9 +30,9 @@ class Matern52(Kernel):
     def order(self):
         return 3
 
-    def transition(self, delta):
+    def transition(self, t1, t2):
         # TODO This can be improved by rewriting in terms of $d / a$.
-        d = delta
+        d = t2 - t1
         a = self.lambda_
         da = d * a
         A = np.array([
@@ -48,8 +48,8 @@ class Matern52(Kernel):
         ])
         return exp(-da) * A
 
-    def noise_cov(self, delta):
-        d = delta
+    def noise_cov(self, t1, t2):
+        d = t2 - t1
         a = self.lambda_
         da = d * a
         c = exp(-2 * da)
