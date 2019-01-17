@@ -1,0 +1,37 @@
+// A test case which emulates a one-dimensional GP regression problem. This
+// enables us to generate ground-truth data using GPy. I used the following
+// code.
+//
+//     kernel = GPy.kern.Matern32(input_dim=1, variance=2.0, lengthscale=1.0)
+//     m = GPy.models.GPRegression(
+//             ts[:,None], ys[:,None], kernel, noise_var=0.5)
+//     mean, var = m.predict_noiseless(ts[:,None])
+//     loglik = m.log_likelihood()
+{
+    "model_class": "DifferenceModel",
+    "model_args": {"var": 0.5},
+    "items": [
+        {"name": "x", "kernel_class": "Matern32", "kernel_args": {"var": 2.0, "lscale": 1.0}}
+    ],
+    "observations": [
+        {"items1": ["x"], "items2": [], "diff": -1.36990909, "t": 0.11616722},
+        {"items1": ["x"], "items2": [], "diff": -0.39828387, "t": 0.31198904},
+        {"items1": ["x"], "items2": [], "diff": -1.17667162, "t": 0.31203728},
+        {"items1": ["x"], "items2": [], "diff": -1.18469352, "t": 0.74908024},
+        {"items1": ["x"], "items2": [], "diff": 0.2237994, "t": 1.19731697},
+        {"items1": ["x"], "items2": [], "diff": 0.75493037, "t": 1.20223002},
+        {"items1": ["x"], "items2": [], "diff": -1.0498634, "t": 1.41614516},
+        {"items1": ["x"], "items2": [], "diff": 1.01922526, "t": 1.46398788},
+        {"items1": ["x"], "items2": [], "diff": 0.27991674, "t": 1.73235229},
+        {"items1": ["x"], "items2": [], "diff": -0.00345967, "t": 1.90142861}
+    ],
+    "scores": {
+        "x": {
+            "mean": [-0.99606326, -0.93513349, -0.93511385, -0.634957, 0.06515012,
+                     0.0696086, 0.16275975, 0.17522242, 0.1741778, 0.13094119],
+            "var": [0.21599159, 0.14519806, 0.14520025, 0.21748969, 0.13274853,
+                    0.13163945, 0.11720207, 0.12105049, 0.16185744, 0.23808988]
+        }
+    },
+    "log_likelihood": -13.503920388087426
+}

@@ -21,6 +21,7 @@ from . import kernel
 from .model import (
     BinaryModel,
     TernaryModel,
+    DifferenceModel,
 )
 
 from .item import (

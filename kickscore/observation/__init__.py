@@ -4,3 +4,5 @@ from .ordinal import (
     LogitWinObservation,
     LogitTieObservation,
 )
+
+from .gaussian import GaussianObservation

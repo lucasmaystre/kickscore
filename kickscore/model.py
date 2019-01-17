@@ -3,7 +3,8 @@ import abc
 from .item import Item
 from .observation import (
         ProbitWinObservation, ProbitTieObservation,
-        LogitWinObservation, LogitTieObservation)
+        LogitWinObservation, LogitTieObservation,
+        GaussianObservation)
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -146,9 +147,35 @@ class TernaryModel(Model):
         prob2 = self._tie_obs.probability(elems, t, margin)
         return (prob1, prob2, 1 - prob1 - prob2)
 
+
+class DifferenceModel(Model):
+
+    def __init__(self, var=1.0):
+        super().__init__()
+        self.var = var
+
+    def observe(self, items1, items2, diff, var=None, t=0.0):
+        if t < self.last_t:
+            raise ValueError(
+                    "observations must be added in chronological order")
+        if var is None:
+            var = self.var
+        items = (self.process_items(items1, sign=+1)
+                + self.process_items(items2, sign=-1))
+        obs = GaussianObservation(items, diff, var, t=t)
+        self.observations.append(obs)
+        for item, _ in items:
+            item.link_observation(obs)
+        self.last_t = t
+
+    def probabilities(self, items1, items2, threshold=0.0, var=None, t=0.0):
+        if var is None:
+            var = self.var
+        items = (self.process_items(items1, sign=+1)
+                + self.process_items(items2, sign=-1))
+        prob = GaussianObservation.probability(items, threshold, var, t=t)
+        return (prob, 1 - prob)
+
 # Future models
 #def observe_count(self, count, attack, defense, t):
-#    raise NotImplementedError()
-#
-#def observe_diff(self, diff, winners, losers, t):
 #    raise NotImplementedError()
