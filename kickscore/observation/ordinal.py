@@ -2,7 +2,8 @@ import numba
 import numpy as np
 
 from .observation import Observation
-from .utils import normpdf, normcdf, logphi, logsumexp2, cvi_expectations
+from .utils import (
+        normpdf, normcdf, logphi, logsumexp2, cvi_expectations, match_moments)
 from math import exp, log, sqrt, log1p, expm1  # Faster than numpy equivalents.
 
 
@@ -165,6 +166,7 @@ class LogitWinObservation(Observation):
         return exp(logpart)
 
 
+@match_moments
 @cvi_expectations
 @numba.jit(nopython=True)
 def _ll_logit_tie(x, margin):
@@ -179,8 +181,8 @@ class LogitTieObservation(Observation):
         super().__init__(elems, t)
         self._margin = margin
 
-    def match_moments(self, mean_cav, cov_cav):
-        raise NotImplementedError()
+    def match_moments(self, mean_cav, var_cav):
+        return _ll_logit_tie.match_moments(mean_cav, var_cav, self._margin)
 
     def cvi_expectations(self, mean, var):
         return _ll_logit_tie.cvi_expectations(mean, var, self._margin)
