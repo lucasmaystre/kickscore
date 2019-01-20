@@ -6,3 +6,4 @@ from .ordinal import (
 )
 
 from .gaussian import GaussianObservation
+from .poisson import PoissonObservation

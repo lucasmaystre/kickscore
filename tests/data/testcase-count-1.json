@@ -1,0 +1,38 @@
+// A test case which emulates a one-dimensional GP problem, using the *EP
+// method*. The ground-truth is generated using GPy.
+//
+//     from GPy.inference.latent_function_inference import EP
+//
+//     kernel = GPy.kern.Matern32(input_dim=1, variance=2.0, lengthscale=1.0)
+//     m = GPy.core.GP(X=X, Y=Y, kernel=kernel,
+//             likelihood=GPy.likelihoods.Poisson(),
+//             inference_method=EP(parallel_updates=True, epsilon=1e-8))
+//     mean, var = m.predict_noiseless(X)
+//     loglik = m.log_likelihood()
+{
+    "model_class": "CountModel",
+    "items": [
+        {"name": "x", "kernel_class": "Matern32", "kernel_args": {"var": 2.0, "lscale": 1.0}}
+    ],
+    "observations": [
+        {"items1": ["x"], "items2": [], "count": 0, "t": 0.11616722},
+        {"items1": ["x"], "items2": [], "count": 5, "t": 0.31198904},
+        {"items1": ["x"], "items2": [], "count": 9, "t": 0.31203728},
+        {"items1": ["x"], "items2": [], "count": 17, "t": 0.74908024},
+        {"items1": ["x"], "items2": [], "count": 13, "t": 1.19731697},
+        {"items1": ["x"], "items2": [], "count": 9, "t": 1.20223002},
+        {"items1": ["x"], "items2": [], "count": 14, "t": 1.41614516},
+        {"items1": ["x"], "items2": [], "count": 4, "t": 1.46398788},
+        {"items1": ["x"], "items2": [], "count": 0, "t": 1.73235229},
+        {"items1": ["x"], "items2": [], "count": 3, "t": 1.90142861}
+    ],
+    "scores": {
+        "x": {
+            "mean": [0.93164981, 1.72301551, 1.72320218, 2.73508948, 2.45344018,
+                    2.44689963, 2.0414921, 1.8880199, 0.96836331, 0.6341377],
+            "var": [0.14713937, 0.06385539, 0.06385362, 0.05218482, 0.03325405,
+                    0.03286925, 0.0427826, 0.04961863, 0.12335469, 0.21598998]
+        }
+    },
+    "log_likelihood": -34.17124728271082
+}

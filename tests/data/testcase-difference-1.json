@@ -1,6 +1,5 @@
-// A test case which emulates a one-dimensional GP regression problem. This
-// enables us to generate ground-truth data using GPy. I used the following
-// code.
+// A test case which emulates a one-dimensional GP problem. The ground-truth is
+// generated using GPy.
 //
 //     kernel = GPy.kern.Matern32(input_dim=1, variance=2.0, lengthscale=1.0)
 //     m = GPy.models.GPRegression(

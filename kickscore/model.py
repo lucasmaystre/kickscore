@@ -4,7 +4,8 @@ from .item import Item
 from .observation import (
         ProbitWinObservation, ProbitTieObservation,
         LogitWinObservation, LogitTieObservation,
-        GaussianObservation)
+        GaussianObservation,
+        PoissonObservation)
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -176,6 +177,27 @@ class DifferenceModel(Model):
         prob = GaussianObservation.probability(items, threshold, var, t=t)
         return (prob, 1 - prob)
 
-# Future models
-#def observe_count(self, count, attack, defense, t):
-#    raise NotImplementedError()
+
+class CountModel(Model):
+
+    def observe(self, items1, items2, count, t=0.0):
+        assert isinstance(count, int) and count >= 0
+        if t < self.last_t:
+            raise ValueError(
+                    "observations must be added in chronological order")
+        items = (self.process_items(items1, sign=+1)
+                + self.process_items(items2, sign=-1))
+        obs = PoissonObservation(items, count, t=t)
+        self.observations.append(obs)
+        for item, _ in items:
+            item.link_observation(obs)
+        self.last_t = t
+
+    def probabilities(self, items1, items2, t=0.0):
+        items = (self.process_items(items1, sign=+1)
+                + self.process_items(items2, sign=-1))
+        probs = list()
+        while sum(probs) < 0.999:
+            probs.append(PoissonObservation.probability(
+                    items, count=len(probs), t=t))
+        return probs

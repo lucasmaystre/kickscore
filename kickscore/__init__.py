@@ -22,6 +22,7 @@ from .model import (
     BinaryModel,
     TernaryModel,
     DifferenceModel,
+    CountModel,
 )
 
 from .item import (

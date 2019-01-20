@@ -1,0 +1,41 @@
+// A test case which emulates a one-dimensional GP problem, using the *KL
+// method*. The ground-truth is generated using GPy.
+//
+//     from GPy.models.gp_var_gauss import GPVariationalGaussianApproximation
+//
+//     kernel = GPy.kern.Matern32(input_dim=1, variance=2.0, lengthscale=1.0)
+//     m = GPVariationalGaussianApproximation(X=X, Y=Y, kernel=kernel,
+//             likelihood=GPy.likelihoods.Poisson())
+//     for _ in range(1000):
+//         m.optimize()
+//
+//     mean, var = m.predict_noiseless(X)
+//     loglik = m.log_likelihood()
+{
+    "model_class": "CountModel",
+    "items": [
+        {"name": "x", "kernel_class": "Matern32", "kernel_args": {"var": 2.0, "lscale": 1.0}}
+    ],
+    "observations": [
+        {"items1": ["x"], "items2": [], "count": 0, "t": 0.11616722},
+        {"items1": ["x"], "items2": [], "count": 5, "t": 0.31198904},
+        {"items1": ["x"], "items2": [], "count": 9, "t": 0.31203728},
+        {"items1": ["x"], "items2": [], "count": 17, "t": 0.74908024},
+        {"items1": ["x"], "items2": [], "count": 13, "t": 1.19731697},
+        {"items1": ["x"], "items2": [], "count": 9, "t": 1.20223002},
+        {"items1": ["x"], "items2": [], "count": 14, "t": 1.41614516},
+        {"items1": ["x"], "items2": [], "count": 4, "t": 1.46398788},
+        {"items1": ["x"], "items2": [], "count": 0, "t": 1.73235229},
+        {"items1": ["x"], "items2": [], "count": 3, "t": 1.90142861}
+    ],
+    "fit_args": {"method": "kl"},
+    "scores": {
+        "x": {
+            "mean": [0.93159168, 1.72307994, 1.72326666, 2.73517544, 2.4534431,
+                    2.44697658, 2.04145669, 1.88814428, 0.96835075, 0.63402195],
+            "var": [0.14512913, 0.06307765, 0.06307603, 0.05130112, 0.03306047,
+                    0.03267764, 0.04250479, 0.04924906, 0.12088921, 0.2108703]
+        }
+    },
+    "log_likelihood": -34.18357051489731
+}

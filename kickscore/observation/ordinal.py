@@ -2,7 +2,7 @@ import numba
 import numpy as np
 
 from .observation import Observation
-from .utils import normpdf, normcdf, logphi, logsumexp, cvi_expectations
+from .utils import normpdf, normcdf, logphi, logsumexp2, cvi_expectations
 from math import exp, log, sqrt, log1p, expm1  # Faster than numpy equivalents.
 
 
@@ -111,7 +111,7 @@ def _mm_logit_win(mean_cav, cov_cav):
     for i, x in enumerate(LAMBDAS):
         arr1[i], arr2[i], arr3[i] = _mm_probit_win(
                 x * mean_cav, x * x * cov_cav)
-    logpart1 = logsumexp(arr1, bs=CS)
+    logpart1 = logsumexp2(arr1, CS)
     dlogpart1 = (np.dot(np.exp(arr1) * arr2, CS * LAMBDAS)
                  / np.dot(np.exp(arr1), CS))
     d2logpart1 = (np.dot(np.exp(arr1) * (arr2 * arr2 + arr3),

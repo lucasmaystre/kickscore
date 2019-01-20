@@ -2,7 +2,7 @@ import numba
 import numpy as np
 
 from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
-from scipy.special import roots_legendre
+from scipy.special import roots_hermitenorm
 
 
 # Some magic constants for a stable computation of logphi(z).
@@ -64,31 +64,61 @@ def logphi(z):
 
 
 @numba.jit(nopython=True)
-def logsumexp(xs, bs=None):
+def logsumexp(xs):
     a = np.max(xs)
-    if bs is None:
-        return a + log(np.sum(np.exp(xs - a)))
-    else:
-        return a + log(np.sum(bs * np.exp(xs - a)))
+    return a + log(np.sum(np.exp(xs - a)))
+
+
+@numba.jit(nopython=True)
+def logsumexp2(xs, bs):
+    a = np.max(xs)
+    return a + log(np.sum(bs * np.exp(xs - a)))
 
 
 def cvi_expectations(ll_fct):
     """Add a function that computes the exp. log-lik. and its derivatives."""
-    # Based on the implementation of `scipy.integrate.fixed_quad`.
-    n, a, b = 30, -7.0, 7.0  # Order of quadrature, lower & upper limits.
-    xs, ws = roots_legendre(n)
-    ys = (b - a) * (np.real(xs) + 1) / 2.0 + a
-    c = (b-a)/2.0
+    n = 30  # Order of Gauss-Hermite quadrature.
+    xs, ws = roots_hermitenorm(n)
     @numba.jit(nopython=True)
-    def integrals(mean, var, param):
+    def integrals(mean, var, *args):
         std = sqrt(var)
         exp_ll, alpha, beta = 0.0, 0.0, 0.0
         for i in range(n):
-            val = (ws[i] * c * ll_fct(std*ys[i] + mean, param)
-                    * exp(-ys[i]*ys[i] / 2.0) / SQRT2PI)
+            val = (ws[i] / SQRT2PI) * ll_fct(std*xs[i] + mean, *args)
             exp_ll += val
-            alpha += (ys[i] / std) * val
-            beta += ((ys[i]*ys[i] - 1) / (2*var)) * val
+            alpha += (xs[i] / std) * val
+            beta += ((xs[i]*xs[i] - 1) / (2*var)) * val
         return exp_ll, alpha, beta
     ll_fct.cvi_expectations = integrals
     return ll_fct
+
+
+def match_moments(ll_fct):
+    """Add a function that computes the log-part. fct and its derivatives."""
+    n = 30  # Order of Gauss-Hermite quadrature.
+    xs, ws = roots_hermitenorm(n)
+    lws = np.log(ws) - log(SQRT2PI)
+    @numba.jit(nopython=True)
+    def integrals(mean, var, *args):
+        std = sqrt(var)
+        loglike = np.array([ll_fct(std*x + mean, *args) for x in xs])
+        logpart = logsumexp(lws + loglike)
+        vals = np.exp(lws + loglike - logpart)
+        dlogpart = np.dot(vals, xs / std)
+        d2logpart = np.dot(vals, (xs*xs - 1) / var) - dlogpart*dlogpart
+        return logpart, dlogpart, d2logpart
+    ll_fct.match_moments = integrals
+    return ll_fct
+
+
+_LF_CACHE = np.cumsum([0] + [log(i) for i in range(1, 500)])
+
+@numba.jit(nopython=True)
+def log_factorial(k):
+    if k < len(_LF_CACHE):
+        return _LF_CACHE[k]
+    else:
+        tot = _LF_CACHE[-1]
+        for i in range(len(_LF_CACHE), k+1):
+            tot += log(i)
+        return tot
