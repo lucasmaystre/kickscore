@@ -77,6 +77,12 @@ class Model(metaclass=abc.ABCMeta):
         else:
             raise ValueError("items should be a list, a tuple or a dict")
 
+    def plot_scores(self, items,
+            resolution=None, figsize=None, timestamps=False):
+        # Delayed import in order to avoid a hard dependency on Matplotlib.
+        from .plotting import plot_scores
+        return plot_scores(self, items, resolution, figsize, timestamps)
+
 
 class BinaryModel(Model):
 
