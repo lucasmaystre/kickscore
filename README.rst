@@ -3,13 +3,16 @@ kickscore
 
 |build-status| |coverage|
 
-``kickscore`` is a dynamic skill rating system, similar to the `Elo rating
-system <https://en.wikipedia.org/wiki/Elo_rating_system>`_ and to `TrueSkill
-<https://en.wikipedia.org/wiki/TrueSkill>`_. It comes as a Python 3 library.
+``kickscore`` is the dynamic skill rating system powering `Kickoff.ai
+<https://kickoff.ai/>`_.
 
 In short, ``kickscore`` can be used to understand & visualize the skill of
-players competing in pairwise matches, and to predict outcomes of future
-matches.
+players (or teams) competing in pairwise matches, and to predict outcomes of
+future matches. It extends the `Elo rating system
+<https://en.wikipedia.org/wiki/Elo_rating_system>`_ and `TrueSkill
+<https://en.wikipedia.org/wiki/TrueSkill>`_.
+
+|nba-history|
 
 Getting started
 ---------------
@@ -22,10 +25,10 @@ To get started, you might want to explore one of these notebooks:
 
 - `Basic example illustrating the API <examples/kickscore-basics.ipynb>`_
   (`interactive version
-  <https://colab.research.google.com/github/lucasmaystre/kickscore/blob/master/examples/kickscore-basics.ipynb>`_)
+  <https://colab.research.google.com/github/lucasmaystre/kickscore/blob/master/examples/kickscore-basics.ipynb>`__)
 - `Visualizing the history of the NBA <examples/nba-history.ipynb>`_
   (`interactive version
-  <https://colab.research.google.com/github/lucasmaystre/kickscore/blob/master/examples/nba-history.ipynb>`_)
+  <https://colab.research.google.com/github/lucasmaystre/kickscore/blob/master/examples/nba-history.ipynb>`__)
 
 References
 ----------
@@ -46,3 +49,7 @@ References
    :alt: code coverage
    :scale: 100%
    :target: https://codecov.io/gh/lucasmaystre/kickscore
+
+.. |nba-history| image:: https://lum-public.s3-eu-west-1.amazonaws.com/kickscore-nba-history.svg
+   :alt: evolution of NBA teams' skill over history
+   :scale: 100%
