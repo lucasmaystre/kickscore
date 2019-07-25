@@ -13,6 +13,7 @@
 /.eggs/
 /_novcs/
 .cache/
+examples/nba_elo.csv
 
 # Sphinx-generated doc.
 docs/_build

@@ -18,6 +18,15 @@ To install the latest release directly from PyPI, simply type::
 
     pip install kickscore
 
+To get started, you might want to explore one of these notebooks:
+
+- `Basic example illustrating the API <examples/kickscore-basics.ipynb>`_
+  (`interactive version
+  <https://colab.research.google.com/github/lucasmaystre/kickscore/blob/master/examples/kickscore-basics.ipynb>`_)
+- `Visualizing the history of the NBA <examples/nba-history.ipynb>`_
+  (`interactive version
+  <https://colab.research.google.com/github/lucasmaystre/kickscore/blob/master/examples/nba-history.ipynb>`_)
+
 References
 ----------
 
