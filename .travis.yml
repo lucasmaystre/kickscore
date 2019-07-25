@@ -8,9 +8,14 @@ install:
 - pip install pytest-cov
 - pip install codecov
 - pip install -e .
-script: py.test --cov=kickscore
-env: NUMBA_DISABLE_JIT=1
-after_success: codecov
+matrix:
+  include:
+  # Main job, uses numba.
+  - script: py.test --cov=kickscore
+  # Secondary job, disables numba & computes code coverage.
+  - script: py.test --cov=kickscore
+    env: NUMBA_DISABLE_JIT=1
+    after_success: codecov
 deploy:
   provider: pypi
   user: lum
@@ -19,3 +24,5 @@ deploy:
   on:
     tags: true
     branch: master
+  skip_existing: true
+  distributions: "sdist bdist_wheel"
