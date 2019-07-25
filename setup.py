@@ -12,7 +12,7 @@ def readme():
 
 setup(
     name="kickscore",
-    version="0.1.0",
+    version="0.1.1",
     author="Lucas Maystre",
     author_email="lucas@maystre.ch",
     description="A dynamic skill rating system.",
