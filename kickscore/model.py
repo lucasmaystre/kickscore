@@ -5,7 +5,8 @@ from .observation import (
         ProbitWinObservation, ProbitTieObservation,
         LogitWinObservation, LogitTieObservation,
         GaussianObservation,
-        PoissonObservation)
+        PoissonObservation,
+        SkellamObservation)
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -206,4 +207,37 @@ class CountModel(Model):
         while sum(probs) < 0.999:
             probs.append(PoissonObservation.probability(
                     items, count=len(probs), t=t))
+        return probs
+
+
+class CountDiffModel(Model):
+
+    def __init__(self, base_rate=0.0):
+        super().__init__()
+        self._base_rate = base_rate
+
+    def observe(self, items1, items2, diff, t=0.0):
+        if t < self.last_t:
+            raise ValueError(
+                    "observations must be added in chronological order")
+        items = (self.process_items(items1, sign=+1)
+                + self.process_items(items2, sign=-1))
+        obs = SkellamObservation(items, diff, self._base_rate, t=t)
+        self.observations.append(obs)
+        for item, _ in items:
+            item.link_observation(obs)
+        self.last_t = t
+
+    def probabilities(self, items1, items2, t=0.0):
+        items = (self.process_items(items1, sign=+1)
+                + self.process_items(items2, sign=-1))
+        k = 0
+        probs = [SkellamObservation.probability(
+                items, k, self._base_rate, t=t)]
+        while sum(probs) < 0.999:
+            k += 1
+            probs.append(SkellamObservation.probability(
+                    items, k, self._base_rate, t=t))
+            probs.insert(0, SkellamObservation.probability(
+                    items, -k, self._base_rate, t=t))
         return probs

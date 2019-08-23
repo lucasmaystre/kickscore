@@ -1,0 +1,21 @@
+// A toy example. The "ground-truth" was generated using kickscore itself, so
+// this test is mostly useful to catch regression bugs.
+{
+    "model_class": "CountDiffModel",
+    "model_args": {"base_rate": 0.5},
+    "items": [
+        {"name": "x", "kernel_class": "Matern32", "kernel_args": {"var": 2.0, "lscale": 1.0}},
+        {"name": "y", "kernel_class": "Matern32", "kernel_args": {"var": 2.0, "lscale": 1.0}}
+    ],
+    "observations": [
+        {"items1": ["x"], "items2": ["y"], "diff": -3, "t": 0.11616722},
+        {"items1": ["x"], "items2": ["y"], "diff": 4, "t": 0.31198904}
+    ],
+    "scores": {
+        "x": {
+            "mean": [0.10906551, -0.38858567],
+            "var": [0.60656275, 0.60328433]
+        }
+    },
+    "log_likelihood": -2.4796823330945803
+}

@@ -1,7 +1,9 @@
+import ctypes
 import numba
 import numpy as np
 
 from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
+from numba.extending import get_cython_function_address
 from scipy.special import roots_hermitenorm
 
 
@@ -122,3 +124,10 @@ def log_factorial(k):
         for i in range(len(_LF_CACHE), k+1):
             tot += log(i)
         return tot
+
+
+# Modified Bessel function of the first kind.
+# Followed <https://github.com/numba/numba/issues/3086#issuecomment-403469308>.
+_addr = get_cython_function_address("scipy.special.cython_special", "__pyx_fuse_1iv")
+_type = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double, ctypes.c_double)
+iv = _type(_addr)

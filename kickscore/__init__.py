@@ -23,6 +23,7 @@ from .model import (
     TernaryModel,
     DifferenceModel,
     CountModel,
+    CountDiffModel,
 )
 
 from .item import (
