@@ -39,7 +39,7 @@ class PoissonObservation(Observation):
 def _ll_skellam(x, diff, base_rate):
     # TODO The call to `iv` slows this function down by a factor 30x.
     """Compute the log-likelihood of x under the Skellam model."""
-    return (-(exp(-x - base_rate) + exp(x - base_rate)) - x * diff
+    return (-(exp(x + base_rate) + exp(-x + base_rate)) + x * diff
             + log(iv(abs(diff), 2 * exp(base_rate))))
 
 
