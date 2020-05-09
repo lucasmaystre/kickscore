@@ -14,8 +14,9 @@ def plot_scores(model, items, resolution=None, figsize=None, timestamps=False):
     fig, ax = plt.subplots(figsize=figsize)
     for name in items:
         color = next(colors)
-        first = min(obs.t for obs in model.item[name].observations)
-        last = max(obs.t for obs in model.item[name].observations)
+        ts, _, _ = model.item[name].scores
+        first = min(ts)
+        last = max(ts)
         ts = np.linspace(first, last, num=int(resolution*(last - first)))
         ms, vs = model.item[name].predict(ts)
         std = np.sqrt(vs)

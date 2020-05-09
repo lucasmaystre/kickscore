@@ -11,7 +11,6 @@ class Item:
             self.fitter = RecursiveFitter(kernel)
         else:
             raise ValueError("invalid fitter type '{}'".format(fitter))
-        self.observations = list()
 
     @property
     def kernel(self):
@@ -23,6 +22,3 @@ class Item:
 
     def predict(self, ts):
         return self.fitter.predict(ts)
-
-    def link_observation(self, obs):
-        self.observations.append(obs)

@@ -1,7 +1,9 @@
 import json
 import kickscore as ks
 import numpy as np
+import pickle
 import pytest
+import random
 
 
 def test_json_example(testcase_path):
@@ -57,3 +59,21 @@ def test_add_item_twice():
     model.add_item("x", kernel)
     with pytest.raises(ValueError):
         model.add_item("x", kernel)
+
+
+def test_saving():
+    """Serializing a large(-ish) model with pickle should work."""
+    random.seed(0)
+    kernel = ks.kernel.Constant(1.0)
+    model = ks.BinaryModel()
+    for i in range(100):
+        model.add_item(f"team{i}", kernel)
+    for _ in range(500):
+        i, j = random.sample(model.item.keys(), 2)
+        model.observe(winners=[i], losers=[j], t=0.0)
+    # Serialize & unserialize.
+    data = pickle.dumps(model)
+    model2 = pickle.loads(data)
+    assert model2.item.keys() == model.item.keys()
+    for obs, obs2 in zip(model.observations, model2.observations):
+        assert obs.t == obs2.t

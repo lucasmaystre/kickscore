@@ -104,8 +104,6 @@ class BinaryModel(Model):
                 + self.process_items(losers, sign=-1))
         obs = self._win_obs(elems, t=t)
         self.observations.append(obs)
-        for item, _ in elems:
-            item.link_observation(obs)
         self.last_t = t
 
     def probabilities(self, team1, team2, t):
@@ -142,8 +140,6 @@ class TernaryModel(Model):
         else:
             obs = self._win_obs(elems, t=t, margin=margin)
         self.observations.append(obs)
-        for item, _ in elems:
-            item.link_observation(obs)
         self.last_t = t
 
     def probabilities(self, team1, team2, t, margin=None):
@@ -172,8 +168,6 @@ class DifferenceModel(Model):
                 + self.process_items(items2, sign=-1))
         obs = GaussianObservation(items, diff, var, t=t)
         self.observations.append(obs)
-        for item, _ in items:
-            item.link_observation(obs)
         self.last_t = t
 
     def probabilities(self, items1, items2, threshold=0.0, var=None, t=0.0):
@@ -196,8 +190,6 @@ class CountModel(Model):
                 + self.process_items(items2, sign=-1))
         obs = PoissonObservation(items, count, t=t)
         self.observations.append(obs)
-        for item, _ in items:
-            item.link_observation(obs)
         self.last_t = t
 
     def probabilities(self, items1, items2, t=0.0):
@@ -224,8 +216,6 @@ class CountDiffModel(Model):
                 + self.process_items(items2, sign=-1))
         obs = SkellamObservation(items, diff, self._base_rate, t=t)
         self.observations.append(obs)
-        for item, _ in items:
-            item.link_observation(obs)
         self.last_t = t
 
     def probabilities(self, items1, items2, t=0.0):
