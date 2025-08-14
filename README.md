@@ -1,7 +1,7 @@
 # kickscore
 
-[![build status](https://travis-ci.org/lucasmaystre/kickscore.svg?branch=master)](https://travis-ci.org/lucasmaystre/kickscore)
-[![code coverage](https://codecov.io/gh/lucasmaystre/kickscore/branch/master/graph/badge.svg)](https://codecov.io/gh/lucasmaystre/kickscore)
+[![Build package](https://github.com/lucasmaystre/kickscore/actions/workflows/build.yml/badge.svg)](https://github.com/lucasmaystre/kickscore/actions/workflows/build.yml)
+[![Code coverage](https://codecov.io/gh/lucasmaystre/kickscore/branch/master/graph/badge.svg)](https://codecov.io/gh/lucasmaystre/kickscore)
 
 `kickscore` is the dynamic skill rating system powering [Kickoff.ai](https://kickoff.ai/).
 
