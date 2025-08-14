@@ -1,14 +1,16 @@
+from collections.abc import Sequence
 from math import exp, expm1, log, log1p, sqrt  # Faster than numpy equivalents.
 
 import numba
 import numpy as np
 
+from ..item import Item
 from .observation import Observation
 from .utils import cvi_expectations, logphi, logsumexp2, match_moments, normcdf, normpdf
 
 
 @numba.jit(nopython=True)
-def _mm_probit_win(mean_cav, cov_cav):
+def _mm_probit_win(mean_cav: float, cov_cav: float) -> tuple[float, float, float]:
     # Adapted from the GPML function `likErf.m`.
     z = mean_cav / sqrt(1 + cov_cav)
     logpart, val = logphi(z)
@@ -19,31 +21,31 @@ def _mm_probit_win(mean_cav, cov_cav):
 
 @cvi_expectations
 @numba.jit(nopython=True)
-def _ll_probit_win(x, margin):
+def _ll_probit_win(x: float, margin: float) -> float:
     """Compute log-likelihood of x under the probit win model."""
     return logphi(x - margin)[0]
 
 
 class ProbitWinObservation(Observation):
-    def __init__(self, elems, t, margin=0):
+    def __init__(self, elems: Sequence[tuple[Item, float]], t: float, margin: float = 0):
         super().__init__(elems, t)
         self._margin = margin
 
-    def match_moments(self, mean_cav, cov_cav):
-        return _mm_probit_win(mean_cav - self._margin, cov_cav)
+    def match_moments(self, mean_cav: float, var_cav: float) -> tuple[float, float, float]:
+        return _mm_probit_win(mean_cav - self._margin, var_cav)
 
-    def cvi_expectations(self, mean, var):
-        return _ll_probit_win.cvi_expectations(mean, var, self._margin)
+    def cvi_expectations(self, mean: float, var: float) -> tuple[float, float, float]:
+        return _ll_probit_win.cvi_expectations(mean, var, self._margin)  # pyright: ignore[reportFunctionMemberAccess]
 
     @staticmethod
-    def probability(elems, t, margin=0):
+    def probability(elems: Sequence[tuple[Item, float]], t: float, margin: float = 0) -> float:
         m, v = Observation.f_params(elems, t)
         logpart, _, _ = _mm_probit_win(m - margin, v)
         return exp(logpart)
 
 
 @numba.jit(nopython=True)
-def _mm_probit_tie(mean_cav, cov_cav, margin):
+def _mm_probit_tie(mean_cav: float, cov_cav: float, margin: float) -> tuple[float, float, float]:
     # TODO This is probably numerically unstable.
     denom = sqrt(1 + cov_cav)
     z1 = (mean_cav + margin) / denom
@@ -60,7 +62,7 @@ def _mm_probit_tie(mean_cav, cov_cav, margin):
 
 @cvi_expectations
 @numba.jit(nopython=True)
-def _ll_probit_tie(x, margin):
+def _ll_probit_tie(x: float, margin: float) -> float:
     """Compute log-likelihood of x under the probit tie model."""
     # Stable computation log(1 - e^a) c.f.
     # https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
@@ -74,18 +76,18 @@ def _ll_probit_tie(x, margin):
 
 
 class ProbitTieObservation(Observation):
-    def __init__(self, elems, t, margin):
+    def __init__(self, elems: Sequence[tuple[Item, float]], t: float, margin: float):
         super().__init__(elems, t)
         self._margin = margin
 
-    def match_moments(self, mean_cav, cov_cav):
-        return _mm_probit_tie(mean_cav, cov_cav, self._margin)
+    def match_moments(self, mean_cav: float, var_cav: float) -> tuple[float, float, float]:
+        return _mm_probit_tie(mean_cav, var_cav, self._margin)
 
-    def cvi_expectations(self, mean, var):
-        return _ll_probit_tie.cvi_expectations(mean, var, self._margin)
+    def cvi_expectations(self, mean: float, var: float) -> tuple[float, float, float]:
+        return _ll_probit_tie.cvi_expectations(mean, var, self._margin)  # pyright: ignore[reportFunctionMemberAccess]
 
     @staticmethod
-    def probability(elems, t, margin):
+    def probability(elems: Sequence[tuple[Item, float]], t: float, margin: float = 0) -> float:
         m, v = Observation.f_params(elems, t)
         logpart, _, _ = _mm_probit_tie(m, v, margin)
         return exp(logpart)
@@ -105,7 +107,7 @@ CS = np.array(
 
 
 @numba.jit(nopython=True)
-def _mm_logit_win(mean_cav, cov_cav):
+def _mm_logit_win(mean_cav: float, cov_cav: float) -> tuple[float, float, float]:
     # Adapted from the GPML function `likLogistic.m`.
     # First use a scale mixture.
     arr1, arr2, arr3 = np.zeros(5), np.zeros(5), np.zeros(5)
@@ -137,7 +139,7 @@ def _mm_logit_win(mean_cav, cov_cav):
 
 @cvi_expectations
 @numba.jit(nopython=True)
-def _ll_logit_win(x, margin):
+def _ll_logit_win(x: float, margin: float) -> float:
     """Compute log-likelihood of x under the logit win model."""
     z = x - margin
     if z > 0:
@@ -147,18 +149,18 @@ def _ll_logit_win(x, margin):
 
 
 class LogitWinObservation(Observation):
-    def __init__(self, elems, t, margin=0):
+    def __init__(self, elems: Sequence[tuple[Item, float]], t: float, margin: float = 0):
         super().__init__(elems, t)
         self._margin = margin
 
-    def match_moments(self, mean_cav, cov_cav):
-        return _mm_logit_win(mean_cav - self._margin, cov_cav)
+    def match_moments(self, mean_cav: float, var_cav: float) -> tuple[float, float, float]:
+        return _mm_logit_win(mean_cav - self._margin, var_cav)
 
-    def cvi_expectations(self, mean, var):
-        return _ll_logit_win.cvi_expectations(mean, var, self._margin)
+    def cvi_expectations(self, mean: float, var: float) -> tuple[float, float, float]:
+        return _ll_logit_win.cvi_expectations(mean, var, self._margin)  # pyright: ignore[reportFunctionMemberAccess]
 
     @staticmethod
-    def probability(elems, t, margin=0):
+    def probability(elems: Sequence[tuple[Item, float]], t: float, margin: float = 0) -> float:
         m, v = Observation.f_params(elems, t)
         logpart, _, _ = _mm_logit_win(m - margin, v)
         return exp(logpart)
@@ -167,24 +169,24 @@ class LogitWinObservation(Observation):
 @match_moments
 @cvi_expectations
 @numba.jit(nopython=True)
-def _ll_logit_tie(x, margin):
+def _ll_logit_tie(x: float, margin: float) -> float:
     """Compute log-likelihood of x under the logit tie model."""
     return _ll_logit_win(x, margin) + _ll_logit_win(-x, margin) + log(expm1(2 * margin))
 
 
 class LogitTieObservation(Observation):
-    def __init__(self, elems, t, margin=0):
+    def __init__(self, elems: Sequence[tuple[Item, float]], t: float, margin: float = 0):
         super().__init__(elems, t)
         self._margin = margin
 
-    def match_moments(self, mean_cav, var_cav):
-        return _ll_logit_tie.match_moments(mean_cav, var_cav, self._margin)
+    def match_moments(self, mean_cav: float, var_cav: float) -> tuple[float, float, float]:
+        return _ll_logit_tie.match_moments(mean_cav, var_cav, self._margin)  # pyright: ignore[reportFunctionMemberAccess]
 
-    def cvi_expectations(self, mean, var):
-        return _ll_logit_tie.cvi_expectations(mean, var, self._margin)
+    def cvi_expectations(self, mean: float, var: float) -> tuple[float, float, float]:
+        return _ll_logit_tie.cvi_expectations(mean, var, self._margin)  # pyright: ignore[reportFunctionMemberAccess]
 
     @staticmethod
-    def probability(elems, t, margin=0):
+    def probability(elems: Sequence[tuple[Item, float]], t: float, margin: float = 0) -> float:
         m, v = Observation.f_params(elems, t)
         logpart1, _, _ = _mm_logit_win(+m - margin, v)
         logpart2, _, _ = _mm_logit_win(-m - margin, v)

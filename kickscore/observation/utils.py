@@ -1,9 +1,12 @@
 import ctypes
+from collections.abc import Callable
 from math import erfc, exp, log, pi, sqrt  # Faster than numpy equivalents.
+from typing import Any
 
 import numba
 import numpy as np
 from numba.extending import get_cython_function_address
+from numpy.typing import NDArray
 from scipy.special import roots_hermitenorm
 
 # Some magic constants for a stable computation of logphi(z).
@@ -50,20 +53,20 @@ SQRT2PI = sqrt(2.0 * pi)
 
 
 @numba.jit(nopython=True)
-def normpdf(x):
+def normpdf(x: float) -> float:
     """Normal probability density function."""
     return exp(-x * x / 2.0) / SQRT2PI
 
 
 @numba.jit(nopython=True)
-def normcdf(x):
+def normcdf(x: float) -> float:
     """Normal cumulative density function."""
     # If X ~ N(0,1), returns P(X < x).
     return erfc(-x / SQRT2) / 2.0
 
 
 @numba.jit(nopython=True)
-def logphi(z):
+def logphi(z: float) -> tuple[float, float]:
     """Compute the log of the normal cumulative density function."""
     # Adapted from the GPML function `logphi.m`.
     # We cannot use `scipy.special.log_ndtr` because of numba.
@@ -92,24 +95,24 @@ def logphi(z):
 
 
 @numba.jit(nopython=True)
-def logsumexp(xs):
+def logsumexp(xs: NDArray) -> float:
     a = np.max(xs)
     return a + log(np.sum(np.exp(xs - a)))
 
 
 @numba.jit(nopython=True)
-def logsumexp2(xs, bs):
+def logsumexp2(xs: NDArray, bs: NDArray) -> float:
     a = np.max(xs)
     return a + log(np.sum(bs * np.exp(xs - a)))
 
 
-def cvi_expectations(ll_fct):
+def cvi_expectations(ll_fct: Callable[..., float]) -> Callable[..., float]:
     """Add a function that computes the exp. log-lik. and its derivatives."""
     n = 30  # Order of Gauss-Hermite quadrature.
     xs, ws = roots_hermitenorm(n)
 
     @numba.jit(nopython=True)
-    def integrals(mean, var, *args):
+    def integrals(mean: float, var: float, *args: Any) -> tuple[float, float, float]:
         std = sqrt(var)
         exp_ll, alpha, beta = 0.0, 0.0, 0.0
         for i in range(n):
@@ -119,18 +122,18 @@ def cvi_expectations(ll_fct):
             beta += ((xs[i] * xs[i] - 1) / (2 * var)) * val
         return exp_ll, alpha, beta
 
-    ll_fct.cvi_expectations = integrals
+    ll_fct.cvi_expectations = integrals  # pyright: ignore[reportFunctionMemberAccess]
     return ll_fct
 
 
-def match_moments(ll_fct):
+def match_moments(ll_fct: Callable[..., float]) -> Callable[..., float]:
     """Add a function that computes the log-part. fct and its derivatives."""
     n = 30  # Order of Gauss-Hermite quadrature.
     xs, ws = roots_hermitenorm(n)
     lws = np.log(ws) - log(SQRT2PI)
 
     @numba.jit(nopython=True)
-    def integrals(mean, var, *args):
+    def integrals(mean: float, var: float, *args: Any) -> tuple[float, float, float]:
         std = sqrt(var)
         loglike = np.array([ll_fct(std * x + mean, *args) for x in xs])
         logpart = logsumexp(lws + loglike)
@@ -139,7 +142,7 @@ def match_moments(ll_fct):
         d2logpart = np.dot(vals, (xs * xs - 1) / var) - dlogpart * dlogpart
         return logpart, dlogpart, d2logpart
 
-    ll_fct.match_moments = integrals
+    ll_fct.match_moments = integrals  # pyright: ignore[reportFunctionMemberAccess]
     return ll_fct
 
 
@@ -147,7 +150,7 @@ _LF_CACHE = np.cumsum([0] + [log(i) for i in range(1, 500)])
 
 
 @numba.jit(nopython=True)
-def log_factorial(k):
+def log_factorial(k: int) -> float:
     if k < len(_LF_CACHE):
         return _LF_CACHE[k]
     else:

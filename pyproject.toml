@@ -35,6 +35,9 @@ dependencies = [
     "numba",
 ]
 
+[project.optional-dependencies]
+plotting = ["matplotlib"]
+
 [project.urls]
 Homepage = "https://github.com/lucasmaystre/kickscore"
 Repository = "https://github.com/lucasmaystre/kickscore.git"
@@ -71,7 +74,7 @@ extend-select = ["W", "I"]  # Adds warnings & imports.
 ignore = ["E731", "E741"]
 
 [tool.pyright]
-include = ["choix", "tests"]
+include = ["kickscore", "tests"]
 deprecateTypingAliases = true
 reportDuplicateImport = true
 reportFunctionMemberAccess = "error"

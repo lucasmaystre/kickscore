@@ -1,11 +1,15 @@
 import abc
+from collections.abc import Sequence
 from math import log
+from typing import Any
 
 import numpy as np
 
+from ..item import Item
+
 
 class Observation(metaclass=abc.ABCMeta):
-    def __init__(self, elems, t):
+    def __init__(self, elems: Sequence[tuple[Item, float]], t: float):
         assert len(elems) > 0, "need at least one item per observation"
         self._M = len(elems)
         self._items = np.zeros(self._M, dtype=object)
@@ -22,18 +26,19 @@ class Observation(metaclass=abc.ABCMeta):
         self._exp_ll = 0  # Expected log-likelihood, used with CVI.
 
     @abc.abstractmethod
-    def match_moments(self, mean_cav, cov_cav):
+    def match_moments(self, mean_cav: float, var_cav: float) -> tuple[float, float, float]:
         """Compute statistics of the hybrid distribution."""
 
     @abc.abstractmethod
-    def cvi_expectations(self, mean, var):
+    def cvi_expectations(self, mean: float, var: float) -> tuple[float, float, float]:
         """Compute the expected log-likelihood and its derivatives."""
 
-    @abc.abstractstaticmethod
-    def probability(*args, **kwargs):
+    @staticmethod
+    @abc.abstractmethod
+    def probability(*args: Any, **kwargs: Any) -> float:
         """Compute the probability of the outcome described by `elems`."""
 
-    def ep_update(self, lr=1.0):
+    def ep_update(self, lr: float = 1.0) -> float:
         # Mean and variance of the cavity distribution in function space.
         f_mean_cav = 0
         f_var_cav = 0
@@ -70,7 +75,7 @@ class Observation(metaclass=abc.ABCMeta):
         self._logpart = logpart
         return diff
 
-    def kl_update(self, lr=0.3):
+    def kl_update(self, lr: float = 0.3) -> float:
         # Mean and variance in function space.
         f_mean = 0
         f_var = 0
@@ -98,7 +103,7 @@ class Observation(metaclass=abc.ABCMeta):
         return diff
 
     @property
-    def ep_log_likelihood_contrib(self):
+    def ep_log_likelihood_contrib(self) -> float:
         """Contribution to the log-marginal likelihood of the model."""
         loglik = self._logpart
         for i in range(self._M):
@@ -115,12 +120,12 @@ class Observation(metaclass=abc.ABCMeta):
         return loglik
 
     @property
-    def kl_log_likelihood_contrib(self):
+    def kl_log_likelihood_contrib(self) -> float:
         """Contribution to the log-marginal likelihood of the model."""
         return self._exp_ll
 
     @staticmethod
-    def f_params(elems, t):
+    def f_params(elems: Sequence[tuple[Item, float]], t: float) -> tuple[float, float]:
         """Compute function-space mean and variance."""
         ts = np.array([t])
         m, v = 0.0, 0.0

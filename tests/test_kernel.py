@@ -97,20 +97,20 @@ GROUND_TRUTH = {
 
 
 @pytest.mark.parametrize("name", KERNEL.keys())
-def test_kernel_matrix(name):
+def test_kernel_matrix(name: str):
     """`k_mat` should match the output of GPy."""
     assert np.allclose(KERNEL[name].k_mat(TS), GROUND_TRUTH[name])
 
 
 @pytest.mark.parametrize("kernel", KERNEL.values())
-def test_kernel_diag(kernel):
+def test_kernel_diag(kernel: Kernel):
     """`k_diag` should match the diagonal of `k_mat`."""
     ts = 10 * np.random.random(10)
     assert np.allclose(np.diag(kernel.k_mat(ts)), kernel.k_diag(ts))
 
 
 @pytest.mark.parametrize("kernel", KERNEL.values())
-def test_kernel_order(kernel):
+def test_kernel_order(kernel: Kernel):
     """The SSM matrices & vectors should have the correct dims."""
     m = kernel.order
     assert kernel.state_mean(0.0).shape == (m,)
@@ -123,7 +123,7 @@ def test_kernel_order(kernel):
 
 
 @pytest.mark.parametrize("kernel", KERNEL.values())
-def test_ssm_variance(kernel):
+def test_ssm_variance(kernel: Kernel):
     """The measured state variance should match `k_diag`."""
     ts = 10 * np.random.random(10)
     h = kernel.measurement_vector
@@ -132,7 +132,7 @@ def test_ssm_variance(kernel):
 
 
 @pytest.mark.parametrize("kernel", KERNEL.values())
-def test_ssm_matrices(kernel):
+def test_ssm_matrices(kernel: Kernel):
     """`transition` and `noise_cov` should match the numerical solution.`"""
     deltas = [0.01, 1.0, 10.0]
     for delta in deltas:

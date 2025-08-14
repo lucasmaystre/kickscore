@@ -1,10 +1,14 @@
 import abc
+from collections.abc import Sequence
+from typing import Any, Literal
 
 from .item import Item
+from .kernel import Kernel
 from .observation import (
     GaussianObservation,
     LogitTieObservation,
     LogitWinObservation,
+    Observation,
     PoissonObservation,
     ProbitTieObservation,
     ProbitWinObservation,
@@ -14,25 +18,37 @@ from .observation import (
 
 class Model(metaclass=abc.ABCMeta):
     def __init__(self):
-        self._item = dict()
-        self.last_t = -float("inf")
-        self.observations = list()
-        self._last_method = None  # Last method used to fit the model.
+        self._item: dict[str, Item] = dict()
+        self.last_t: float = -float("inf")
+        self.observations: list[Observation] = list()
+        self._last_method: Literal["ep", "kl"] | None = None  # Last method used to fit the model.
 
     @property
-    def item(self):
+    def item(self) -> dict[str, Item]:
         return self._item
 
-    def add_item(self, name, kernel, fitter="recursive"):
+    def add_item(
+        self,
+        name: str,
+        kernel: Kernel,
+        fitter: Literal["batch", "recursive"] = "recursive",
+    ) -> None:
         if name in self._item:
             raise ValueError("item '{}' already added".format(name))
         self._item[name] = Item(kernel=kernel, fitter=fitter)
 
     @abc.abstractmethod
-    def observe(self, *args, **kwargs):
+    def observe(self, *args: Any, **kwargs: Any) -> None:
         """Add a new observation to the dataset."""
 
-    def fit(self, method="ep", lr=1.0, tol=1e-3, max_iter=100, verbose=False):
+    def fit(
+        self,
+        method: Literal["ep", "kl"] = "ep",
+        lr: float = 1.0,
+        tol: float = 1e-3,
+        max_iter: int = 100,
+        verbose: bool = False,
+    ) -> bool:
         if method == "ep":
             update = lambda obs: obs.ep_update(lr=lr)
         elif method == "kl":
@@ -58,11 +74,11 @@ class Model(metaclass=abc.ABCMeta):
         return False  # Did not converge after `max_iter`.
 
     @abc.abstractmethod
-    def probabilities(self, *args, **kwargs):
+    def probabilities(self, *args: Any, **kwargs: Any) -> Any:
         """Compute the probability of outcomes."""
 
     @property
-    def log_likelihood(self):
+    def log_likelihood(self) -> float:
         """Estimate of log-marginal likelihood of the model."""
         if self._last_method == "ep":
             contrib = lambda x: x.ep_log_likelihood_contrib
@@ -72,7 +88,11 @@ class Model(metaclass=abc.ABCMeta):
             contrib(i.fitter) for i in self.item.values()
         )
 
-    def process_items(self, items, sign=+1):
+    def process_items(
+        self,
+        items: dict[str, Any] | list[str],
+        sign: Literal[-1, +1] = +1,
+    ) -> list[tuple[Item, float]]:
         if isinstance(items, dict):
             return [(self.item[k], sign * float(v)) for k, v in items.items()]
         if isinstance(items, list) or isinstance(items, tuple):
@@ -80,7 +100,13 @@ class Model(metaclass=abc.ABCMeta):
         else:
             raise ValueError("items should be a list, a tuple or a dict")
 
-    def plot_scores(self, items, resolution=None, figsize=None, timestamps=False):
+    def plot_scores(
+        self,
+        items: Sequence[str],
+        resolution: float | None = None,
+        figsize: float | None = None,
+        timestamps: bool = False,
+    ) -> Any:
         # Delayed import in order to avoid a hard dependency on Matplotlib.
         from .plotting import plot_scores
 
@@ -88,7 +114,7 @@ class Model(metaclass=abc.ABCMeta):
 
 
 class BinaryModel(Model):
-    def __init__(self, obs_type="probit"):
+    def __init__(self, obs_type: Literal["probit", "logit"] = "probit"):
         super().__init__()
         if obs_type == "probit":
             self._win_obs = ProbitWinObservation
@@ -97,7 +123,12 @@ class BinaryModel(Model):
         else:
             raise ValueError("unknown observation type: '{}'".format(obs_type))
 
-    def observe(self, winners, losers, t):
+    def observe(
+        self,
+        winners: dict[str, Any] | list[str],
+        losers: dict[str, Any] | list[str],
+        t: float,
+    ) -> None:
         if t < self.last_t:
             raise ValueError("observations must be added in chronological order")
         elems = self.process_items(winners, sign=+1) + self.process_items(losers, sign=-1)
@@ -105,14 +136,19 @@ class BinaryModel(Model):
         self.observations.append(obs)
         self.last_t = t
 
-    def probabilities(self, team1, team2, t):
+    def probabilities(
+        self,
+        team1: dict[str, Any] | list[str],
+        team2: dict[str, Any] | list[str],
+        t: float,
+    ) -> tuple[float, float]:
         elems = self.process_items(team1, sign=+1) + self.process_items(team2, sign=-1)
         prob = self._win_obs.probability(elems, t)
         return (prob, 1 - prob)
 
 
 class TernaryModel(Model):
-    def __init__(self, margin=0.1, obs_type="probit"):
+    def __init__(self, margin: float = 0.1, obs_type: Literal["probit", "logit"] = "probit"):
         super().__init__()
         if obs_type == "probit":
             self._win_obs = ProbitWinObservation
@@ -124,7 +160,14 @@ class TernaryModel(Model):
             raise ValueError("unknown observation type: '{}'".format(obs_type))
         self.margin = margin
 
-    def observe(self, winners, losers, t, tie=False, margin=None):
+    def observe(
+        self,
+        winners: dict[str, Any] | list[str],
+        losers: dict[str, Any] | list[str],
+        t: float,
+        tie: bool = False,
+        margin: float | None = None,
+    ) -> None:
         if t < self.last_t:
             raise ValueError("observations must be added in chronological order")
         if margin is None:
@@ -137,7 +180,13 @@ class TernaryModel(Model):
         self.observations.append(obs)
         self.last_t = t
 
-    def probabilities(self, team1, team2, t, margin=None):
+    def probabilities(
+        self,
+        team1: dict[str, Any] | list[str],
+        team2: dict[str, Any] | list[str],
+        t: float,
+        margin: float | None = None,
+    ) -> tuple[float, float, float]:
         if margin is None:
             margin = self.margin
         elems = self.process_items(team1, sign=+1) + self.process_items(team2, sign=-1)
@@ -147,11 +196,18 @@ class TernaryModel(Model):
 
 
 class DifferenceModel(Model):
-    def __init__(self, var=1.0):
+    def __init__(self, var: float = 1.0):
         super().__init__()
         self.var = var
 
-    def observe(self, items1, items2, diff, var=None, t=0.0):
+    def observe(
+        self,
+        items1: dict[str, Any] | list[str],
+        items2: dict[str, Any] | list[str],
+        diff: float,
+        var: float | None = None,
+        t: float = 0.0,
+    ) -> None:
         if t < self.last_t:
             raise ValueError("observations must be added in chronological order")
         if var is None:
@@ -161,7 +217,14 @@ class DifferenceModel(Model):
         self.observations.append(obs)
         self.last_t = t
 
-    def probabilities(self, items1, items2, threshold=0.0, var=None, t=0.0):
+    def probabilities(
+        self,
+        items1: dict[str, Any] | list[str],
+        items2: dict[str, Any] | list[str],
+        threshold: float = 0.0,
+        var: float | None = None,
+        t: float = 0.0,
+    ) -> tuple[float, float]:
         if var is None:
             var = self.var
         items = self.process_items(items1, sign=+1) + self.process_items(items2, sign=-1)
@@ -170,7 +233,13 @@ class DifferenceModel(Model):
 
 
 class CountModel(Model):
-    def observe(self, items1, items2, count, t=0.0):
+    def observe(
+        self,
+        items1: dict[str, Any] | list[str],
+        items2: dict[str, Any] | list[str],
+        count: int,
+        t: float = 0.0,
+    ) -> None:
         assert isinstance(count, int) and count >= 0
         if t < self.last_t:
             raise ValueError("observations must be added in chronological order")
@@ -179,20 +248,31 @@ class CountModel(Model):
         self.observations.append(obs)
         self.last_t = t
 
-    def probabilities(self, items1, items2, t=0.0):
+    def probabilities(
+        self,
+        items1: dict[str, Any],
+        items2: dict[str, Any],
+        t: float = 0.0,
+    ) -> tuple[float, ...]:
         items = self.process_items(items1, sign=+1) + self.process_items(items2, sign=-1)
         probs = list()
         while sum(probs) < 0.999:
             probs.append(PoissonObservation.probability(items, count=len(probs), t=t))
-        return probs
+        return tuple(probs)
 
 
 class CountDiffModel(Model):
-    def __init__(self, base_rate=0.0):
+    def __init__(self, base_rate: float = 0.0):
         super().__init__()
         self._base_rate = base_rate
 
-    def observe(self, items1, items2, diff, t=0.0):
+    def observe(
+        self,
+        items1: dict[str, Any] | list[str],
+        items2: dict[str, Any] | list[str],
+        diff: int,
+        t: float = 0.0,
+    ) -> None:
         if t < self.last_t:
             raise ValueError("observations must be added in chronological order")
         items = self.process_items(items1, sign=+1) + self.process_items(items2, sign=-1)
@@ -200,7 +280,12 @@ class CountDiffModel(Model):
         self.observations.append(obs)
         self.last_t = t
 
-    def probabilities(self, items1, items2, t=0.0):
+    def probabilities(
+        self,
+        items1: dict[str, Any] | list[str],
+        items2: dict[str, Any] | list[str],
+        t: float = 0.0,
+    ) -> tuple[float, ...]:
         items = self.process_items(items1, sign=+1) + self.process_items(items2, sign=-1)
         k = 0
         probs = [SkellamObservation.probability(items, k, self._base_rate, t=t)]
@@ -208,4 +293,4 @@ class CountDiffModel(Model):
             k += 1
             probs.append(SkellamObservation.probability(items, k, self._base_rate, t=t))
             probs.insert(0, SkellamObservation.probability(items, -k, self._base_rate, t=t))
-        return probs
+        return tuple(probs)

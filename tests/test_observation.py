@@ -9,14 +9,14 @@ from kickscore.observation.observation import Observation
 
 
 class DummyObservation(Observation):
-    def match_moments(self, mean_cav, cov_cav):
-        pass
+    def match_moments(self, mean_cav: float, var_cav: float) -> tuple[float, float, float]:
+        return (0.0, 0.0, 0.0)
 
-    def cvi_expectations(self, mean, var):
-        pass
+    def cvi_expectations(self, mean: float, var: float) -> tuple[float, float, float]:
+        return (0.0, 0.0, 0.0)
 
-    def probability():
-        pass
+    def probability(self) -> float:
+        return 0.0
 
 
 def test_ep_log_likelihood_contrib():

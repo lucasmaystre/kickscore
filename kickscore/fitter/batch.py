@@ -1,25 +1,27 @@
 """Score process fitter using the standard GP batch equations."""
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.linalg import solve_triangular
 
+from ..kernel import Kernel
 from .fitter import Fitter
 
 
 class BatchFitter(Fitter):
-    def __init__(self, kernel):
+    def __init__(self, kernel: Kernel):
         super().__init__(kernel)
         self._cov = None
         self._b_cholesky = None
         self._woodbury_inv = None
         self._woodbury_vec = None
 
-    def allocate(self):
+    def allocate(self) -> None:
         """Overrides `Fitter.allocate` to compute the kernel matrix."""
         super().allocate()
         self._k_mat = self.kernel.k_mat(self.ts)
 
-    def fit(self):
+    def fit(self) -> None:
         # Woodbury inverse and Woodbury vector - used for prediction. Idea
         # taken from GPy (`latent_function_inference.posterior`).
         if not self.is_allocated:
@@ -44,7 +46,7 @@ class BatchFitter(Fitter):
         self.is_fitted = True
 
     @property
-    def ep_log_likelihood_contrib(self):
+    def ep_log_likelihood_contrib(self) -> float:
         """Contribution to the log-marginal likelihood of the model."""
         # Note: this is *not* equal to the log of the marginal likelihood of the
         # regression model. See "stable computation of the marginal likelihood"
@@ -54,8 +56,9 @@ class BatchFitter(Fitter):
         if len(self.ts) == 0:
             return 0.0
         # C.f. Rasmussen and Williams' GPML book, eqs. (3.73) and (3.74).
-        return -np.sum(np.log(np.diag(self._b_cholesky))) + 0.5 * np.dot(
-            self.ns, np.dot(self._cov, self.ns)
+        return -np.sum(np.log(np.diag(self._b_cholesky))) + 0.5 * np.dot(  # pyright: ignore[reportCallIssue, reportArgumentType]
+            self.ns,
+            np.dot(self._cov, self.ns),  # pyright: ignore[reportArgumentType]
         )
 
     @property
@@ -63,7 +66,7 @@ class BatchFitter(Fitter):
         """Contribution to the log-marginal likelihood of the model."""
         raise NotImplementedError()
 
-    def predict(self, ts):
+    def predict(self, ts: NDArray) -> tuple[NDArray, NDArray]:
         if not self.is_fitted:
             raise RuntimeError("new data since last call to `fit()`")
         if len(self.ts) == 0:
@@ -71,6 +74,6 @@ class BatchFitter(Fitter):
         # (3.60) and (3.61) in the GPML book.
         k_mat1 = self.kernel.k_mat(ts, self.ts)
         k_mat2 = self.kernel.k_mat(ts, ts)
-        mean = np.dot(k_mat1, self._woodbury_vec)
-        cov = k_mat2 - k_mat1.dot(self._woodbury_inv).dot(k_mat1.T)
+        mean = np.dot(k_mat1, self._woodbury_vec)  # pyright: ignore[reportArgumentType]
+        cov = k_mat2 - k_mat1.dot(self._woodbury_inv).dot(k_mat1.T)  # pyright: ignore[reportArgumentType, reportCallIssue]
         return (mean, np.diag(cov))

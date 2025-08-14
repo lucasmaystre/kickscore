@@ -2,12 +2,30 @@ from math import log
 
 import numba
 import numpy as np
+from numpy.typing import NDArray
 
+from ..kernel import Kernel
 from .fitter import Fitter
 
 
 @numba.jit(nopython=True)
-def _fit(ts, ms, vs, ns, xs, h, I, A, Q, m_p, P_p, m_f, P_f, m_s, P_s):
+def _fit(
+    ts: NDArray,
+    ms: NDArray,
+    vs: NDArray,
+    ns: NDArray,
+    xs: NDArray,
+    h: NDArray,
+    I: NDArray,
+    A: NDArray,
+    Q: NDArray,
+    m_p: NDArray,
+    P_p: NDArray,
+    m_f: NDArray,
+    P_f: NDArray,
+    m_s: NDArray,
+    P_s: NDArray,
+) -> None:
     # Forward pass (Kalman filter).
     for i in range(len(ts)):
         if i > 0:
@@ -33,7 +51,7 @@ def _fit(ts, ms, vs, ns, xs, h, I, A, Q, m_p, P_p, m_f, P_f, m_s, P_s):
 
 
 class RecursiveFitter(Fitter):
-    def __init__(self, kernel):
+    def __init__(self, kernel: Kernel):
         super().__init__(kernel)
         m = kernel.order
         self._h = kernel.measurement_vector
@@ -47,7 +65,7 @@ class RecursiveFitter(Fitter):
         self._m_s = np.zeros((0, m))  # Smoothing mean.
         self._P_s = np.zeros((0, m, m))  # Smoothing covariance.
 
-    def allocate(self):
+    def allocate(self) -> None:
         """Overrides `Fitter.allocate` to allocate the SSM-related matrices."""
         n_new = len(self.ts_new)
         if n_new == 0:
@@ -56,7 +74,7 @@ class RecursiveFitter(Fitter):
         zeros = np.zeros(n_new)
         self.ts = np.concatenate((self.ts, self.ts_new))
         self.ms = np.concatenate((self.ms, zeros))
-        self.vs = np.concatenate((self.vs, self.kernel.k_diag(self.ts_new)))
+        self.vs = np.concatenate((self.vs, self.kernel.k_diag(np.asarray(self.ts_new))))
         self.ns = np.concatenate((self.ns, zeros))
         self.xs = np.concatenate((self.xs, zeros))
         # Initialize the predictive, filtering and smoothing distributions.
@@ -81,7 +99,7 @@ class RecursiveFitter(Fitter):
         # Clear the list of pending samples.
         self.ts_new = list()
 
-    def fit(self):
+    def fit(self) -> None:
         if not self.is_allocated:
             raise RuntimeError("new data since last call to `allocate()`")
         if len(self.ts) == 0:
@@ -107,7 +125,7 @@ class RecursiveFitter(Fitter):
         self.is_fitted = True
 
     @property
-    def ep_log_likelihood_contrib(self):
+    def ep_log_likelihood_contrib(self) -> float:
         """Contribution to the log-marginal likelihood of the model."""
         # Note: this is *not* equal to the log of the marginal likelihood of the
         # regression model. See "stable computation of the marginal likelihood"
@@ -128,7 +146,7 @@ class RecursiveFitter(Fitter):
         return val
 
     @property
-    def kl_log_likelihood_contrib(self):
+    def kl_log_likelihood_contrib(self) -> float:
         """Contribution to the log-marginal likelihood of the model."""
         # Equivalent to the KL-divergence from the posterior to the prior.
         if not self.is_fitted:
@@ -151,7 +169,7 @@ class RecursiveFitter(Fitter):
             )
         return val
 
-    def predict(self, ts):
+    def predict(self, ts: NDArray) -> tuple[NDArray, NDArray]:
         if not self.is_fitted:
             raise RuntimeError("new data since last call to `fit()`")
         if len(self.ts) == 0:
@@ -178,12 +196,12 @@ class RecursiveFitter(Fitter):
                 else:
                     # Predictive mean and cov for new point based on left
                     # neighbor.
-                    A = self.kernel.transition(self.ts[j], ts[i])
-                    Q = self.kernel.noise_cov(self.ts[j], ts[i])
+                    A = self.kernel.transition(self.ts[j], ts[i])  # pyright: ignore[reportArgumentType]
+                    Q = self.kernel.noise_cov(self.ts[j], ts[i])  # pyright: ignore[reportArgumentType]
                     P = A.dot(P_f[j]).dot(A.T) + Q
                     m = A.dot(m_f[j])
                 # RTS update using the right neighbor.
-                A = self.kernel.transition(ts[i], self.ts[j + 1])
+                A = self.kernel.transition(ts[i], self.ts[j + 1])  # pyright: ignore[reportArgumentType]
                 G = np.linalg.solve(P_p[j + 1], A.dot(P)).T
                 ms[i] = h.dot(m + G.dot(m_s[j + 1] - m_p[j + 1]))
                 vs[i] = h.dot(P + G.dot(P_s[j + 1] - P_p[j + 1]).dot(G.T)).dot(h)

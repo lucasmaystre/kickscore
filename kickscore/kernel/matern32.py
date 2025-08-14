@@ -1,6 +1,7 @@
 from math import exp, sqrt
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .kernel import Kernel
 
@@ -10,26 +11,26 @@ STATIONARY_MEAN = np.zeros(2)
 
 
 class Matern32(Kernel):
-    def __init__(self, var, lscale):
+    def __init__(self, var: float, lscale: float):
         self.var = var
         self.lscale = lscale
         self.lambda_ = sqrt(3) / lscale
 
-    def k_mat(self, ts1, ts2=None):
+    def k_mat(self, ts1: NDArray, ts2: NDArray | None = None) -> NDArray:
         if ts2 is None:
             ts2 = ts1
         r = Kernel.distances(ts1, ts2) / self.lscale
         sqrt3 = sqrt(3)
         return self.var * (1 + sqrt3 * r) * np.exp(-sqrt3 * r)
 
-    def k_diag(self, ts):
+    def k_diag(self, ts: NDArray) -> NDArray:
         return self.var * np.ones(len(ts))
 
     @property
-    def order(self):
+    def order(self) -> int:
         return 2
 
-    def transition(self, t1, t2):
+    def transition(self, t1: float, t2: float) -> NDArray:
         d = t2 - t1
         a = self.lambda_
         A = np.array(
@@ -40,7 +41,7 @@ class Matern32(Kernel):
         )
         return exp(-d * a) * A
 
-    def noise_cov(self, t1, t2):
+    def noise_cov(self, t1: float, t2: float) -> NDArray:
         d = t2 - t1
         a = self.lambda_
         da = d * a
@@ -56,18 +57,18 @@ class Matern32(Kernel):
         )
         return self.var * mat
 
-    def state_mean(self, t):
+    def state_mean(self, t: float) -> NDArray:
         return STATIONARY_MEAN
 
-    def state_cov(self, t):
+    def state_cov(self, t: float) -> NDArray:
         return self.stationary_cov
 
     @property
-    def measurement_vector(self):
+    def measurement_vector(self) -> NDArray:
         return MEASUREMENT_VECTOR
 
     @property
-    def feedback(self):
+    def feedback(self) -> NDArray:
         a = self.lambda_
         mat = np.array(
             [
@@ -78,19 +79,19 @@ class Matern32(Kernel):
         return mat
 
     @property
-    def noise_effect(self):
+    def noise_effect(self) -> NDArray:
         return NOISE_EFFECT
 
     @property
-    def noise_density(self):
+    def noise_density(self) -> NDArray:
         return np.array([[4 * self.var * self.lambda_**3]])
 
     @property
-    def stationary_mean(self):
+    def stationary_mean(self) -> NDArray:
         return STATIONARY_MEAN
 
     @property
-    def stationary_cov(self):
+    def stationary_cov(self) -> NDArray:
         a = self.lambda_
         mat = np.array(
             [

@@ -1,4 +1,5 @@
 from .gaussian import GaussianObservation
+from .observation import Observation
 from .ordinal import (
     LogitTieObservation,
     LogitWinObservation,
@@ -8,6 +9,7 @@ from .ordinal import (
 from .poisson import PoissonObservation, SkellamObservation
 
 __all__ = [
+    "Observation",
     "ProbitWinObservation",
     "ProbitTieObservation",
     "LogitWinObservation",

@@ -3,7 +3,7 @@ from math import log, pi
 import numpy as np
 import pytest
 
-from kickscore.fitter import BatchFitter, RecursiveFitter
+from kickscore.fitter import BatchFitter, Fitter, RecursiveFitter
 from kickscore.kernel import Matern32
 
 KERNEL = Matern32(var=2.0, lscale=1.0)
@@ -97,7 +97,7 @@ DATA = {
 
 
 @pytest.mark.parametrize("fitter", (BatchFitter(KERNEL), RecursiveFitter(KERNEL)))
-def test_allocation(fitter):
+def test_allocation(fitter: Fitter):
     # No data, hence fitter defined to be allocated.
     assert fitter.is_allocated
     # Add some data.
@@ -120,9 +120,9 @@ def test_allocation(fitter):
 
 
 @pytest.mark.parametrize("fitter", (BatchFitter(KERNEL), RecursiveFitter(KERNEL)))
-def test_against_gpy(fitter):
+def test_against_gpy(fitter: Fitter):
     """The output of the fitter should match that of GPy."""
-    for t in DATA["ts_train"]:
+    for t in DATA["ts_train"]:  # pyright: ignore[reportGeneralTypeIssues]
         fitter.add_sample(t)
     fitter.allocate()
     fitter.xs[:] = 1 / DATA["vs"]
@@ -133,20 +133,20 @@ def test_against_gpy(fitter):
     assert np.allclose(fitter.ms, DATA["mean"])
     assert np.allclose(fitter.vs, DATA["var"])
     # Prediction.
-    ms, vs = fitter.predict(DATA["ts_pred"])
+    ms, vs = fitter.predict(DATA["ts_pred"])  # pyright: ignore[reportArgumentType]
     assert np.allclose(ms, DATA["mean_pred"])
     assert np.allclose(vs, DATA["var_pred"])
     # Log-likelihood.
     ll = fitter.ep_log_likelihood_contrib
     # We need to add the unstable terms that cancel out with the EP
     # contributions to the log-likelihood. See appendix of the report.
-    ll += sum(-0.5 * log(2 * pi * v) for v in DATA["vs"])
-    ll += sum(-0.5 * y * y / v for y, v in zip(DATA["ys"], DATA["vs"]))
+    ll += sum(-0.5 * log(2 * pi * v) for v in DATA["vs"])  # pyright: ignore[reportGeneralTypeIssues]
+    ll += sum(-0.5 * y * y / v for y, v in zip(DATA["ys"], DATA["vs"]))  # pyright: ignore[reportArgumentType]
     assert np.allclose(ll, DATA["loglik"])
 
 
 @pytest.mark.parametrize("fitter", (BatchFitter(KERNEL), RecursiveFitter(KERNEL)))
-def test_stability(fitter):
+def test_stability(fitter: Fitter):
     """The fitter should handle infinite-variance observations."""
     ns = np.array([0.0, 0.0, 0.0])
     xs = np.array([100.0, 0.001, 0.0])
@@ -164,7 +164,7 @@ def test_stability(fitter):
 
 
 @pytest.mark.parametrize("fitter", (BatchFitter(KERNEL), RecursiveFitter(KERNEL)))
-def test_no_data(fitter):
+def test_no_data(fitter: Fitter):
     """The fitter should correctly handle the "no-data" case."""
     fitter.fit()
     fitter.predict(np.array([1.0, 2.0]))

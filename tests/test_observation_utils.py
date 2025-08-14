@@ -50,10 +50,10 @@ def test_cvi_expectations():
 
     @cvi_expectations
     @numba.jit(nopython=True)
-    def ll(x):
+    def ll(x: float) -> float:
         return logphi(x)[0]
 
-    vals = ll.cvi_expectations(0.3, 2.7)
+    vals = ll.cvi_expectations(0.3, 2.7)  # pyright: ignore[reportFunctionMemberAccess]
     assert np.allclose(vals, [-1.19810974, 0.89703901, -0.25653925])
 
 
@@ -63,7 +63,10 @@ def test_match_moments():
     for mean in (0.0, -2.0, 18):
         for var in (1e-3, 1.0, 5.0):
             assert np.allclose(
-                ll.match_moments(mean, var, 0.0), _mm_probit_win(mean, var), atol=1e-08, rtol=1e-04
+                ll.match_moments(mean, var, 0.0),  # pyright: ignore[reportFunctionMemberAccess]
+                _mm_probit_win(mean, var),
+                atol=1e-08,
+                rtol=1e-04,
             )
 
 

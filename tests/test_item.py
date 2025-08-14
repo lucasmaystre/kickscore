@@ -10,4 +10,4 @@ def test_fitter_types():
     Item(kernel, fitter="batch")
     Item(kernel, fitter="recursive")
     with pytest.raises(ValueError):
-        Item(kernel, fitter="parallel")
+        Item(kernel, fitter="parallel")  # pyright: ignore[reportArgumentType]

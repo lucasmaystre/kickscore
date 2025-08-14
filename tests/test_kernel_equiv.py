@@ -12,6 +12,7 @@ from kickscore.kernel import (
     Affine,
     Constant,
     Exponential,
+    Kernel,
     Matern32,
     Matern52,
     PiecewiseConstant,
@@ -23,7 +24,7 @@ OBS_NS = np.array([0.65, 0.53, 0.64, 0.99, -0.99, -0.64, 0.00, 0.00])
 OBS_XS = np.array([0.20, 0.16, 0.21, 1.45, 1.00, 0.21, 0.00, 0.20])
 TEST_TS = np.array([1.0, 5.14, 7.0, 11.0])
 
-KERNELS = (
+KERNELS: tuple[Kernel, ...] = (
     Constant(2.5),
     Exponential(1.1, 2.2),
     Matern32(1.5, 0.7),
@@ -32,12 +33,12 @@ KERNELS = (
     Wiener(1.2, 0.3),
     Wiener(1.32, 1.0, var_t0=1.0),
     Constant(0.3) + Matern32(1.5, 0.7) + Matern32(0.2, 5.0),
-    PiecewiseConstant(1.2, bounds=[2.0, 5.3, 10.0]),
+    PiecewiseConstant(1.2, bounds=np.array([2.0, 5.3, 10.0])),
 )
 
 
 @pytest.mark.parametrize("kernel", KERNELS)
-def test_equivalence(kernel):
+def test_equivalence(kernel: Kernel):
     """The SSM and GP-batch approaches should produce the same results."""
     # Setting up the fitters.
     batch = BatchFitter(kernel)

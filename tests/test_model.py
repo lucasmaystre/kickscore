@@ -8,7 +8,7 @@ import pytest
 import kickscore as ks
 
 
-def test_json_example(testcase_path):
+def test_json_example(testcase_path: str):
     """Verify a test case described in JSON format."""
     with open(testcase_path) as f:
         raw = "".join(line for line in f if not line.startswith("//"))
@@ -30,7 +30,7 @@ def test_json_example(testcase_path):
 
 
 @pytest.mark.parametrize("model", [ks.BinaryModel(), ks.TernaryModel()])
-def test_chronological_order(model):
+def test_chronological_order(model: ks.model.Model):
     """Observations can only be added in chronological order."""
     model.add_item("x", kernel=ks.kernel.Constant(1.0))
     model.observe(winners=["x"], losers=[], t=1.0)
