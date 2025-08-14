@@ -19,31 +19,31 @@ class Kernel(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def state_mean(self, t):
-        """Prior mean of the state vector, :math:`\mathbf{m}_0(t)`."""
+        r"""Prior mean of the state vector, :math:`\mathbf{m}_0(t)`."""
 
     @abc.abstractmethod
     def state_cov(self, t):
-        """Prior covariance of the state vector, :math:`\mathbf{P}_0(t)`."""
+        r"""Prior covariance of the state vector, :math:`\mathbf{P}_0(t)`."""
 
     @abc.abstractproperty
     def measurement_vector(self):
-        """Measurement vector :math:`\mathbf{h}`."""
+        r"""Measurement vector :math:`\mathbf{h}`."""
 
     @abc.abstractproperty
     def feedback(self):
-        """Feedback matrix :math:`\mathbf{F}`."""
+        r"""Feedback matrix :math:`\mathbf{F}`."""
 
     @abc.abstractproperty
     def noise_effect(self):
-        """Noise effect matrix :math:`\mathbf{L}`."""
+        r"""Noise effect matrix :math:`\mathbf{L}`."""
 
     @abc.abstractproperty
     def noise_density(self):
-        """Power spectral density of the noise :math:`\mathbf{Q}`."""
+        r"""Power spectral density of the noise :math:`\mathbf{Q}`."""
         # Note: usually a scalar, except for combination kernels (e.g., Add).
 
     def transition(self, t1, t2):
-        """Transition matrix :math:`\mathbf{A}` for a given time interval.
+        r"""Transition matrix :math:`\mathbf{A}` for a given time interval.
 
         Note that this default implementation assumes that the feedback matrix
         is independent of time.
@@ -52,7 +52,7 @@ class Kernel(metaclass=abc.ABCMeta):
         return sp.linalg.expm(F * (t2 - t1))
 
     def noise_cov(self, t1, t2):
-        """Noise covariance matrix :math:`\mathbf{Q}` for a given time interval.
+        r"""Noise covariance matrix :math:`\mathbf{Q}` for a given time interval.
 
         Note that this default implementations assumes that the feedback
         matrix, the noise density and the noise effect are independent of time.
