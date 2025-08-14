@@ -1,8 +1,9 @@
+from math import log
+
 import numba
 import numpy as np
 
 from .fitter import Fitter
-from math import log
 
 
 @numba.jit(nopython=True)
@@ -10,8 +11,8 @@ def _fit(ts, ms, vs, ns, xs, h, I, A, Q, m_p, P_p, m_f, P_f, m_s, P_s):
     # Forward pass (Kalman filter).
     for i in range(len(ts)):
         if i > 0:
-            m_p[i] = np.dot(A[i-1], m_f[i-1])
-            P_p[i] = np.dot(np.dot(A[i-1], P_f[i-1]), A[i-1].T) + Q[i-1]
+            m_p[i] = np.dot(A[i - 1], m_f[i - 1])
+            P_p[i] = np.dot(np.dot(A[i - 1], P_f[i - 1]), A[i - 1].T) + Q[i - 1]
         # These are slightly modified equations to work with tau and nu.
         k = np.dot(P_p[i], h) / (1 + xs[i] * np.dot(np.dot(h, P_p[i]), h))
         m_f[i] = m_p[i] + k * (ns[i] - xs[i] * np.dot(h, m_p[i]))
@@ -24,15 +25,14 @@ def _fit(ts, ms, vs, ns, xs, h, I, A, Q, m_p, P_p, m_f, P_f, m_s, P_s):
             m_s[i] = m_f[i]
             P_s[i] = P_f[i]
         else:
-            G = np.linalg.solve(P_p[i+1], np.dot(A[i], P_f[i])).T
-            m_s[i] = m_f[i] + np.dot(G, m_s[i+1] - m_p[i+1])
-            P_s[i] = P_f[i] + np.dot(np.dot(G, P_s[i+1] - P_p[i+1]), G.T)
+            G = np.linalg.solve(P_p[i + 1], np.dot(A[i], P_f[i])).T
+            m_s[i] = m_f[i] + np.dot(G, m_s[i + 1] - m_p[i + 1])
+            P_s[i] = P_f[i] + np.dot(np.dot(G, P_s[i + 1] - P_p[i + 1]), G.T)
         ms[i] = np.dot(h, m_s[i])
         vs[i] = np.dot(np.dot(h, P_s[i]), h)
 
 
 class RecursiveFitter(Fitter):
-
     def __init__(self, kernel):
         super().__init__(kernel)
         m = kernel.order
@@ -76,8 +76,8 @@ class RecursiveFitter(Fitter):
             if i == 0:
                 # Very first sample, no need to compute anything.
                 continue
-            self._A[i-1] = self.kernel.transition(self.ts[i-1], self.ts[i])
-            self._Q[i-1] = self.kernel.noise_cov(self.ts[i-1], self.ts[i])
+            self._A[i - 1] = self.kernel.transition(self.ts[i - 1], self.ts[i])
+            self._Q[i - 1] = self.kernel.noise_cov(self.ts[i - 1], self.ts[i])
         # Clear the list of pending samples.
         self.ts_new = list()
 
@@ -88,11 +88,22 @@ class RecursiveFitter(Fitter):
             self.is_fitted = True
             return
         _fit(
-                ts=self.ts, ms=self.ms, vs=self.vs, ns=self.ns, xs=self.xs,
-                h=self._h, I=self._I, A=self._A, Q=self._Q,
-                m_p=self._m_p, P_p=self._P_p,
-                m_f=self._m_f, P_f=self._P_f,
-                m_s=self._m_s, P_s=self._P_s)
+            ts=self.ts,
+            ms=self.ms,
+            vs=self.vs,
+            ns=self.ns,
+            xs=self.xs,
+            h=self._h,
+            I=self._I,
+            A=self._A,
+            Q=self._Q,
+            m_p=self._m_p,
+            P_p=self._P_p,
+            m_f=self._m_f,
+            P_f=self._P_f,
+            m_s=self._m_s,
+            P_s=self._P_s,
+        )
         self.is_fitted = True
 
     @property
@@ -110,9 +121,10 @@ class RecursiveFitter(Fitter):
         for i in range(len(self.ts)):
             o = h.dot(m_p[i])
             v = h.dot(P_p[i]).dot(h)
-            val += -0.5 * (log(xs[i] * v  + 1.0)
-                    + (-ns[i]**2 * v - 2 * ns[i] * o + xs[i] * o**2)
-                    / (xs[i] * v + 1))
+            val += -0.5 * (
+                log(xs[i] * v + 1.0)
+                + (-(ns[i] ** 2) * v - 2 * ns[i] * o + xs[i] * o**2) / (xs[i] * v + 1)
+            )
         return val
 
     @property
@@ -131,10 +143,12 @@ class RecursiveFitter(Fitter):
             # Marginal smoothed distribution.
             ms = np.dot(h, self._m_s[i])
             vs = np.dot(h, np.dot(h, self._P_s[i]))
-            val += -0.5 * (log(xs[i] * vp + 1)
-                    + xs[i] * (mp*mp - ms*ms - vs)
-                    - 2 * ns[i] * (mp - ms)
-                    - (xs[i]*mp - ns[i])**2 / (1/vp + xs[i]))
+            val += -0.5 * (
+                log(xs[i] * vp + 1)
+                + xs[i] * (mp * mp - ms * ms - vs)
+                - 2 * ns[i] * (mp - ms)
+                - (xs[i] * mp - ns[i]) ** 2 / (1 / vp + xs[i])
+            )
         return val
 
     def predict(self, ts):
@@ -169,8 +183,8 @@ class RecursiveFitter(Fitter):
                     P = A.dot(P_f[j]).dot(A.T) + Q
                     m = A.dot(m_f[j])
                 # RTS update using the right neighbor.
-                A = self.kernel.transition(ts[i], self.ts[j+1])
-                G = np.linalg.solve(P_p[j+1], A.dot(P)).T
-                ms[i] = h.dot(m + G.dot(m_s[j+1] - m_p[j+1]))
-                vs[i] = h.dot(P + G.dot(P_s[j+1] - P_p[j+1]).dot(G.T)).dot(h)
+                A = self.kernel.transition(ts[i], self.ts[j + 1])
+                G = np.linalg.solve(P_p[j + 1], A.dot(P)).T
+                ms[i] = h.dot(m + G.dot(m_s[j + 1] - m_p[j + 1]))
+                vs[i] = h.dot(P + G.dot(P_s[j + 1] - P_p[j + 1]).dot(G.T)).dot(h)
         return (ms, vs)

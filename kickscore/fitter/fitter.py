@@ -1,11 +1,11 @@
 """Abstract base class for score process fitters."""
 
 import abc
+
 import numpy as np
 
 
 class Fitter(metaclass=abc.ABCMeta):
-
     def __init__(self, kernel):
         self.ts_new = list()
         self.kernel = kernel

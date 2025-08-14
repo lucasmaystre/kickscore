@@ -1,8 +1,8 @@
 import itertools
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
-
-from datetime import datetime
 
 
 def plot_scores(model, items, resolution=None, figsize=None, timestamps=False):
@@ -17,13 +17,13 @@ def plot_scores(model, items, resolution=None, figsize=None, timestamps=False):
         ts, _, _ = model.item[name].scores
         first = min(ts)
         last = max(ts)
-        ts = np.linspace(first, last, num=int(resolution*(last - first)))
+        ts = np.linspace(first, last, num=int(resolution * (last - first)))
         ms, vs = model.item[name].predict(ts)
         std = np.sqrt(vs)
         if timestamps:
             ts = [datetime.fromtimestamp(t) for t in ts]
         ax.plot(ts, ms, color=color, label=name)
-        ax.fill_between(ts, ms-std, ms+std, color=color, alpha=0.1)
+        ax.fill_between(ts, ms - std, ms + std, color=color, alpha=0.1)
     for spine in ("top", "right", "bottom", "left"):
         ax.spines[spine].set_visible(False)
     ax.grid(axis="x", alpha=0.5)

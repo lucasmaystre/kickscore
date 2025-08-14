@@ -8,8 +8,15 @@ import numpy as np
 import pytest
 
 from kickscore.fitter import BatchFitter, RecursiveFitter
-from kickscore.kernel import *
-
+from kickscore.kernel import (
+    Affine,
+    Constant,
+    Exponential,
+    Matern32,
+    Matern52,
+    PiecewiseConstant,
+    Wiener,
+)
 
 TRAIN_TS = np.array([1.32, 3.95, 4.47, 5.14, 5.49, 5.54, 6.41, 9.50])
 OBS_NS = np.array([0.65, 0.53, 0.64, 0.99, -0.99, -0.64, 0.00, 0.00])

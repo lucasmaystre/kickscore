@@ -1,20 +1,17 @@
 import numpy as np
 
-from math import exp, sqrt
 from .kernel import Kernel
 
-
-NOISE_COV = np.zeros((2,2))
-MEASUREMENT_VECTOR = np.array([1., 0.])
-FEEDBACK = np.array([[0., 1.], [0., 0.]])
-NOISE_EFFECT = np.transpose([[0., 1.]])
+NOISE_COV = np.zeros((2, 2))
+MEASUREMENT_VECTOR = np.array([1.0, 0.0])
+FEEDBACK = np.array([[0.0, 1.0], [0.0, 0.0]])
+NOISE_EFFECT = np.transpose([[0.0, 1.0]])
 STATE_MEAN = np.zeros(2)
 
 
 class Affine(Kernel):
-
     """Affine kernel.
-    
+
     A combination of a linear kernel with a constant offset. The offset leads
     to a positive-definite state covariance matrix, which avoids numerical
     issues for SSM inference.
@@ -35,15 +32,14 @@ class Affine(Kernel):
 
     def k_diag(self, ts):
         ts = np.asarray(ts)
-        return (self.var_slope * np.square(ts - self.t0)
-                + self.var_offset * np.ones_like(ts))
+        return self.var_slope * np.square(ts - self.t0) + self.var_offset * np.ones_like(ts)
 
     @property
     def order(self):
         return 2
 
     def transition(self, t1, t2):
-        return np.array([[1., t2 - t1], [0., 1.]])
+        return np.array([[1.0, t2 - t1], [0.0, 1.0]])
 
     def noise_cov(self, t1, t2):
         return NOISE_COV
@@ -53,8 +49,9 @@ class Affine(Kernel):
 
     def state_cov(self, t):
         t = t - self.t0
-        return (self.var_slope * np.array([[t*t, t], [t, 1]])
-                + self.var_offset * np.array([[1., 0.], [0., 0.]]))
+        return self.var_slope * np.array([[t * t, t], [t, 1]]) + self.var_offset * np.array(
+            [[1.0, 0.0], [0.0, 0.0]]
+        )
 
     @property
     def measurement_vector(self):

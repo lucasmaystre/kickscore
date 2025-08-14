@@ -1,9 +1,11 @@
 import json
-import kickscore as ks
-import numpy as np
 import pickle
-import pytest
 import random
+
+import numpy as np
+import pytest
+
+import kickscore as ks
 
 
 def test_json_example(testcase_path):
@@ -24,8 +26,7 @@ def test_json_example(testcase_path):
         _, mean, var = model.item[name].scores
         assert np.allclose(scores["mean"], mean, rtol=1e-3)
         assert np.allclose(scores["var"], var, rtol=1e-3)
-    assert np.allclose(
-            model.log_likelihood, data["log_likelihood"], rtol=1e-3)
+    assert np.allclose(model.log_likelihood, data["log_likelihood"], rtol=1e-3)
 
 
 @pytest.mark.parametrize("model", [ks.BinaryModel(), ks.TernaryModel()])
@@ -69,7 +70,7 @@ def test_saving():
     for i in range(100):
         model.add_item(f"team{i}", kernel)
     for _ in range(500):
-        i, j = random.sample(model.item.keys(), 2)
+        i, j = random.sample(list(model.item.keys()), 2)
         model.observe(winners=[i], losers=[j], t=0.0)
     # Serialize & unserialize.
     data = pickle.dumps(model)

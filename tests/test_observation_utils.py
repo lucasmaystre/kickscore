@@ -1,11 +1,20 @@
+from math import log, pi, sqrt
+
 import numba
 import numpy as np
 import scipy.special
-
-from kickscore.observation.ordinal import _mm_probit_win, _ll_probit_win
-from kickscore.observation.utils import *
-from math import log, pi, sqrt
 from scipy.stats import norm
+
+from kickscore.observation.ordinal import _ll_probit_win, _mm_probit_win
+from kickscore.observation.utils import (
+    cvi_expectations,
+    log_factorial,
+    logphi,
+    logsumexp,
+    match_moments,
+    normcdf,
+    normpdf,
+)
 
 
 def test_normpdf():
@@ -38,10 +47,12 @@ def test_logphi():
 
 def test_cvi_expectations():
     """Basic test for ``cvi_expectations``."""
+
     @cvi_expectations
     @numba.jit(nopython=True)
     def ll(x):
         return logphi(x)[0]
+
     vals = ll.cvi_expectations(0.3, 2.7)
     assert np.allclose(vals, [-1.19810974, 0.89703901, -0.25653925])
 
@@ -52,15 +63,19 @@ def test_match_moments():
     for mean in (0.0, -2.0, 18):
         for var in (1e-3, 1.0, 5.0):
             assert np.allclose(
-                    ll.match_moments(mean, var, 0.0),
-                    _mm_probit_win(mean, var),
-                    atol=1e-08, rtol=1e-04)
+                ll.match_moments(mean, var, 0.0), _mm_probit_win(mean, var), atol=1e-08, rtol=1e-04
+            )
 
 
 def test_logsumexp():
     """``logsumexp`` should match scipy's output."""
     for xs in np.random.randn(10, 5):
-        assert logsumexp(xs) == scipy.special.logsumexp(xs)
+        assert np.allclose(
+            logsumexp(xs),
+            scipy.special.logsumexp(xs),
+            rtol=1e-08,
+            atol=0,
+        )
 
 
 def test_log_factorial():

@@ -1,9 +1,15 @@
 import numpy as np
 import pytest
 
-from kickscore.kernel import *
+from kickscore.kernel import (
+    Affine,
+    Constant,
+    Exponential,
+    Matern32,
+    Matern52,
+    Wiener,
+)
 from kickscore.kernel.kernel import Kernel
-
 
 TS = np.array([1.26, 1.46, 2.67])
 KERNEL = {
@@ -38,34 +44,55 @@ KERNEL = {
 #         print(name)
 #         print(k.K(ts))
 GROUND_TRUTH = {
-    "constant": np.array([
-        [ 2.5,  2.5,  2.5],
-        [ 2.5,  2.5,  2.5],
-        [ 2.5,  2.5,  2.5]]),
-    "exponential": np.array([
-        [ 1.1,         1.00441079,  0.57949461],
-        [ 1.00441079,  1.1,         0.63464479],
-        [ 0.57949461,  0.63464479,  1.1       ]]),
-    "matern32": np.array([
-        [ 1.5,         1.36702084,  0.20560784],
-        [ 1.36702084,  1.5,         0.3000753 ],
-        [ 0.20560784,  0.3000753,   1.5       ]]),
-    "matern52": np.array([
-        [ 0.2,         0.19973384,  0.18769647],
-        [ 0.19973384,  0.2,         0.1907786 ],
-        [ 0.18769647,  0.1907786,   0.2       ]]),
-    "affine": np.array([
-        [  3.1752,   3.6792,   6.7284],
-        [  3.6792,   4.2632,   7.7964],
-        [  6.7284,   7.7964,  14.2578]]),
-    "wiener": np.array([
-        [ 1.512,  1.512,  1.512],
-        [ 1.512,  1.752,  1.752],
-        [ 1.512,  1.752,  3.204]]),
-    "add": np.array([
-        [ 1.7,         1.56675469,  0.39330431],
-        [ 1.56675469,  1.7,         0.4908539 ],
-        [ 0.39330431,  0.4908539,   1.7       ]]),
+    "constant": np.array(
+        [
+            [2.5, 2.5, 2.5],
+            [2.5, 2.5, 2.5],
+            [2.5, 2.5, 2.5],
+        ]
+    ),
+    "exponential": np.array(
+        [
+            [1.1, 1.00441079, 0.57949461],
+            [1.00441079, 1.1, 0.63464479],
+            [0.57949461, 0.63464479, 1.1],
+        ]
+    ),
+    "matern32": np.array(
+        [
+            [1.5, 1.36702084, 0.20560784],
+            [1.36702084, 1.5, 0.3000753],
+            [0.20560784, 0.3000753, 1.5],
+        ]
+    ),
+    "matern52": np.array(
+        [
+            [0.2, 0.19973384, 0.18769647],
+            [0.19973384, 0.2, 0.1907786],
+            [0.18769647, 0.1907786, 0.2],
+        ]
+    ),
+    "affine": np.array(
+        [
+            [3.1752, 3.6792, 6.7284],
+            [3.6792, 4.2632, 7.7964],
+            [6.7284, 7.7964, 14.2578],
+        ]
+    ),
+    "wiener": np.array(
+        [
+            [1.512, 1.512, 1.512],
+            [1.512, 1.752, 1.752],
+            [1.512, 1.752, 3.204],
+        ]
+    ),
+    "add": np.array(
+        [
+            [1.7, 1.56675469, 0.39330431],
+            [1.56675469, 1.7, 0.4908539],
+            [0.39330431, 0.4908539, 1.7],
+        ]
+    ),
 }
 
 
@@ -109,12 +136,8 @@ def test_ssm_matrices(kernel):
     """`transition` and `noise_cov` should match the numerical solution.`"""
     deltas = [0.01, 1.0, 10.0]
     for delta in deltas:
-        assert np.allclose(
-                Kernel.transition(kernel, 0.0, delta),
-                kernel.transition(0.0, delta))
-        assert np.allclose(
-                Kernel.noise_cov(kernel, 0.0, delta),
-                kernel.noise_cov(0.0, delta))
+        assert np.allclose(Kernel.transition(kernel, 0.0, delta), kernel.transition(0.0, delta))
+        assert np.allclose(Kernel.noise_cov(kernel, 0.0, delta), kernel.noise_cov(0.0, delta))
 
 
 def test_simulate_constant():

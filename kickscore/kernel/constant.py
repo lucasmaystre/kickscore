@@ -2,15 +2,13 @@ import numpy as np
 
 from .kernel import Kernel
 
-
-MAT_ZERO = np.array([[0.]])
-MAT_ONE = np.array([[1.]])
-VEC_ZERO = np.array([0.])
-VEC_ONE = np.array([1.])
+MAT_ZERO = np.array([[0.0]])
+MAT_ONE = np.array([[1.0]])
+VEC_ZERO = np.array([0.0])
+VEC_ONE = np.array([1.0])
 
 
 class Constant(Kernel):
-
     def __init__(self, var):
         self.var = var
 
@@ -56,7 +54,6 @@ class Constant(Kernel):
 
 
 class PiecewiseConstant(Kernel):
-
     def __init__(self, var, bounds):
         self.var = var
         self.bounds = np.sort(bounds)

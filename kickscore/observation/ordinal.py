@@ -1,10 +1,10 @@
+from math import exp, expm1, log, log1p, sqrt  # Faster than numpy equivalents.
+
 import numba
 import numpy as np
 
 from .observation import Observation
-from .utils import (
-        normpdf, normcdf, logphi, logsumexp2, cvi_expectations, match_moments)
-from math import exp, log, sqrt, log1p, expm1  # Faster than numpy equivalents.
+from .utils import cvi_expectations, logphi, logsumexp2, match_moments, normcdf, normpdf
 
 
 @numba.jit(nopython=True)
@@ -25,7 +25,6 @@ def _ll_probit_win(x, margin):
 
 
 class ProbitWinObservation(Observation):
-
     def __init__(self, elems, t, margin=0):
         super().__init__(elems, t)
         self._margin = margin
@@ -65,7 +64,7 @@ def _ll_probit_tie(x, margin):
     """Compute log-likelihood of x under the probit tie model."""
     # Stable computation log(1 - e^a) c.f.
     # https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
-    x = -abs(x) # Stabilizes computations (likelihood is symmetric).
+    x = -abs(x)  # Stabilizes computations (likelihood is symmetric).
     z = logphi(x + margin)[0]
     a = logphi(x - margin)[0] - z
     if a > -0.693:  # ~= log 2.
@@ -75,7 +74,6 @@ def _ll_probit_tie(x, margin):
 
 
 class ProbitTieObservation(Observation):
-
     def __init__(self, elems, t, margin):
         super().__init__(elems, t)
         self._margin = margin
@@ -94,14 +92,16 @@ class ProbitTieObservation(Observation):
 
 
 # Constants used in `_mm_logit_win`.
-LAMBDAS = sqrt(2) * np.array([0.44, 0.41, 0.40, 0.39, 0.36]);
-CS = np.array([
-    1.146480988574439e+02,
-    -1.508871030070582e+03,
-    2.676085036831241e+03,
-    -1.356294962039222e+03,
-    7.543285642111850e+01
-])
+LAMBDAS = sqrt(2) * np.array([0.44, 0.41, 0.40, 0.39, 0.36])
+CS = np.array(
+    [
+        1.146480988574439e02,
+        -1.508871030070582e03,
+        2.676085036831241e03,
+        -1.356294962039222e03,
+        7.543285642111850e01,
+    ]
+)
 
 
 @numba.jit(nopython=True)
@@ -110,16 +110,15 @@ def _mm_logit_win(mean_cav, cov_cav):
     # First use a scale mixture.
     arr1, arr2, arr3 = np.zeros(5), np.zeros(5), np.zeros(5)
     for i, x in enumerate(LAMBDAS):
-        arr1[i], arr2[i], arr3[i] = _mm_probit_win(
-                x * mean_cav, x * x * cov_cav)
+        arr1[i], arr2[i], arr3[i] = _mm_probit_win(x * mean_cav, x * x * cov_cav)
     logpart1 = logsumexp2(arr1, CS)
-    dlogpart1 = (np.dot(np.exp(arr1) * arr2, CS * LAMBDAS)
-                 / np.dot(np.exp(arr1), CS))
-    d2logpart1 = (np.dot(np.exp(arr1) * (arr2 * arr2 + arr3),
-                         CS * LAMBDAS * LAMBDAS)
-                  / np.dot(np.exp(arr1), CS)) - (dlogpart1 * dlogpart1)
+    dlogpart1 = np.dot(np.exp(arr1) * arr2, CS * LAMBDAS) / np.dot(np.exp(arr1), CS)
+    d2logpart1 = (
+        np.dot(np.exp(arr1) * (arr2 * arr2 + arr3), CS * LAMBDAS * LAMBDAS)
+        / np.dot(np.exp(arr1), CS)
+    ) - (dlogpart1 * dlogpart1)
     # Tail decays linearly in the log domain (and not quadratically).
-    exponent = -10.0 * (abs(mean_cav) - (196.0 / 200.0) * cov_cav - 4.0) 
+    exponent = -10.0 * (abs(mean_cav) - (196.0 / 200.0) * cov_cav - 4.0)
     if exponent < 500:
         lambd = 1.0 / (1.0 + exp(exponent))
         logpart2 = min(cov_cav / 2.0 - abs(mean_cav), -0.1)
@@ -148,7 +147,6 @@ def _ll_logit_win(x, margin):
 
 
 class LogitWinObservation(Observation):
-
     def __init__(self, elems, t, margin=0):
         super().__init__(elems, t)
         self._margin = margin
@@ -171,12 +169,10 @@ class LogitWinObservation(Observation):
 @numba.jit(nopython=True)
 def _ll_logit_tie(x, margin):
     """Compute log-likelihood of x under the logit tie model."""
-    return (_ll_logit_win(x, margin) + _ll_logit_win(-x, margin)
-            + log(expm1(2 * margin)))
+    return _ll_logit_win(x, margin) + _ll_logit_win(-x, margin) + log(expm1(2 * margin))
 
 
 class LogitTieObservation(Observation):
-
     def __init__(self, elems, t, margin=0):
         super().__init__(elems, t)
         self._margin = margin

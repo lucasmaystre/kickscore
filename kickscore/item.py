@@ -1,9 +1,7 @@
-import numpy as np
 from .fitter import BatchFitter, RecursiveFitter
 
 
 class Item:
-
     def __init__(self, kernel, fitter):
         if fitter == "batch":
             self.fitter = BatchFitter(kernel)

@@ -1,11 +1,10 @@
 import abc
-import numpy as np
-
 from math import log
+
+import numpy as np
 
 
 class Observation(metaclass=abc.ABCMeta):
-
     def __init__(self, elems, t):
         assert len(elems) > 0, "need at least one item per observation"
         self._M = len(elems)
@@ -53,8 +52,7 @@ class Observation(metaclass=abc.ABCMeta):
             f_mean_cav += coeff * n_cav / x_cav
             f_var_cav += coeff * coeff / x_cav
         # Moment matching.
-        logpart, dlogpart, d2logpart = self.match_moments(
-                f_mean_cav, f_var_cav)
+        logpart, dlogpart, d2logpart = self.match_moments(f_mean_cav, f_var_cav)
         for i in range(self._M):
             item = self._items[i]
             idx = self._indices[i]
@@ -62,10 +60,9 @@ class Observation(metaclass=abc.ABCMeta):
             x_cav = self._xs_cav[i]
             n_cav = self._ns_cav[i]
             # Update the elements' parameters.
-            denom = (1 + coeff * coeff * d2logpart / x_cav)
+            denom = 1 + coeff * coeff * d2logpart / x_cav
             x = -coeff * coeff * d2logpart / denom
-            n = (coeff * (dlogpart - coeff * (n_cav / x_cav) * d2logpart)
-                    / denom)
+            n = coeff * (dlogpart - coeff * (n_cav / x_cav) * d2logpart) / denom
             item.fitter.xs[idx] = (1 - lr) * item.fitter.xs[idx] + lr * x
             item.fitter.ns[idx] = (1 - lr) * item.fitter.ns[idx] + lr * n
         diff = abs(self._logpart - logpart)
@@ -112,9 +109,9 @@ class Observation(metaclass=abc.ABCMeta):
             x = item.fitter.xs[idx]
             n = item.fitter.ns[idx]
             # Adding the contribution of the factor to the log-likelihood.
-            loglik += (0.5 * log(x / x_cav + 1)
-                    + (-n**2 - 2 * n * n_cav + x * n_cav**2 / x_cav)
-                    / (2 * (x + x_cav)))
+            loglik += 0.5 * log(x / x_cav + 1) + (
+                -(n**2) - 2 * n * n_cav + x * n_cav**2 / x_cav
+            ) / (2 * (x + x_cav))
         return loglik
 
     @property

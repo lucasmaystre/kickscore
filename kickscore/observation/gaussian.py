@@ -1,22 +1,22 @@
+from math import log, pi, sqrt  # Faster than numpy equivalents.
+
 import numba
-import numpy as np
 
 from .observation import Observation
 from .utils import normcdf
-from math import log, sqrt, pi  # Faster than numpy equivalents.
 
 
 @numba.jit(nopython=True)
 def _mm_gaussian(mean_cav, var_cav, diff, var_obs):
-    logpart = -0.5 * (log(2 * pi *(var_obs + var_cav))
-            + (diff - mean_cav)**2 / (var_obs + var_cav))
+    logpart = -0.5 * (
+        log(2 * pi * (var_obs + var_cav)) + (diff - mean_cav) ** 2 / (var_obs + var_cav)
+    )
     dlogpart = (diff - mean_cav) / (var_obs + var_cav)
     d2logpart = -1.0 / (var_obs + var_cav)
     return logpart, dlogpart, d2logpart
 
 
 class GaussianObservation(Observation):
-
     def __init__(self, items, diff, var, t):
         super().__init__(items, t)
         self._diff = diff

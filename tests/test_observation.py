@@ -1,15 +1,14 @@
+from math import log, pi, sqrt
+
 import numpy as np
+from scipy.stats import norm
 
 from kickscore.item import Item
 from kickscore.kernel import Constant
 from kickscore.observation.observation import Observation
 
-from math import log, pi, sqrt
-from scipy.stats import norm
-
 
 class DummyObservation(Observation):
-
     def match_moments(self, mean_cav, cov_cav):
         pass
 
@@ -36,11 +35,10 @@ def test_ep_log_likelihood_contrib():
     obs._ns_cav[0] = mean_cav / cov_cav
     obs._logpart = logpart
     # Ground truth is log( Z / N(m1 | m2, v1 + v2) ), see notes.
-    ground_truth = logpart - log(norm.pdf(
-            mean, loc=mean_cav, scale=sqrt(var + cov_cav)))
+    ground_truth = logpart - log(norm.pdf(mean, loc=mean_cav, scale=sqrt(var + cov_cav)))
     # The contribution to the log-likelihood doesn't include unstable terms,
     # they need to be added back to be compared to the ground truth.
     ll = obs.ep_log_likelihood_contrib
     ll += 0.5 * log(2 * pi * var)
-    ll += 0.5 * mean*mean / var
+    ll += 0.5 * mean * mean / var
     assert np.allclose(ll, ground_truth)

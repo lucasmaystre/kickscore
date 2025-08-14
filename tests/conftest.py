@@ -1,8 +1,7 @@
 import glob
 import os.path
 
-
-DATA_ROOT = os.path.join(os.path.dirname(__file__), 'data')
+DATA_ROOT = os.path.join(os.path.dirname(__file__), "data")
 
 
 def pytest_generate_tests(metafunc):

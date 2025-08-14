@@ -1,16 +1,15 @@
+from math import exp, sqrt
+
 import numpy as np
 
-from math import exp, sqrt
 from .kernel import Kernel
 
-
-MEASUREMENT_VECTOR = np.array([1., 0.])
-NOISE_EFFECT = np.transpose([[0., 1.]])
+MEASUREMENT_VECTOR = np.array([1.0, 0.0])
+NOISE_EFFECT = np.transpose([[0.0, 1.0]])
 STATIONARY_MEAN = np.zeros(2)
 
 
 class Matern32(Kernel):
-
     def __init__(self, var, lscale):
         self.var = var
         self.lscale = lscale
@@ -33,10 +32,12 @@ class Matern32(Kernel):
     def transition(self, t1, t2):
         d = t2 - t1
         a = self.lambda_
-        A = np.array([
-            [d * a + 1, d        ],
-            [-d * a*a , 1 - d * a],
-        ])
+        A = np.array(
+            [
+                [d * a + 1, d],
+                [-d * a * a, 1 - d * a],
+            ]
+        )
         return exp(-d * a) * A
 
     def noise_cov(self, t1, t2):
@@ -44,13 +45,15 @@ class Matern32(Kernel):
         a = self.lambda_
         da = d * a
         c = exp(-2 * da)
-        x11 = 1 - c * (2 * da*da + 2 * da + 1)
-        x12 = c * (2 * da*da * a)
-        x22 = a*a * (1 - c * (2 * da*da - 2 * da + 1))
-        mat = np.array([
-            [x11, x12],
-            [x12, x22],
-        ])
+        x11 = 1 - c * (2 * da * da + 2 * da + 1)
+        x12 = c * (2 * da * da * a)
+        x22 = a * a * (1 - c * (2 * da * da - 2 * da + 1))
+        mat = np.array(
+            [
+                [x11, x12],
+                [x12, x22],
+            ]
+        )
         return self.var * mat
 
     def state_mean(self, t):
@@ -66,10 +69,12 @@ class Matern32(Kernel):
     @property
     def feedback(self):
         a = self.lambda_
-        mat = np.array([
-            [0     , 1     ],
-            [-a**2 , -2 * a],
-        ])
+        mat = np.array(
+            [
+                [0, 1],
+                [-(a**2), -2 * a],
+            ]
+        )
         return mat
 
     @property
@@ -87,8 +92,10 @@ class Matern32(Kernel):
     @property
     def stationary_cov(self):
         a = self.lambda_
-        mat = np.array([
-            [1, 0  ],
-            [0, a*a],
-        ])
+        mat = np.array(
+            [
+                [1, 0],
+                [0, a * a],
+            ]
+        )
         return self.var * mat

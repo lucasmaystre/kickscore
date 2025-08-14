@@ -1,8 +1,8 @@
+from math import exp
+
 import numpy as np
 
-from math import exp, sqrt
 from .kernel import Kernel
-
 
 VEC_ZERO = np.zeros(1)
 VEC_ONE = np.ones(1)
@@ -10,7 +10,6 @@ MAT_ONE = np.ones((1, 1))
 
 
 class Exponential(Kernel):
-
     def __init__(self, var, lscale):
         self.var = var
         self.lscale = lscale

@@ -1,11 +1,11 @@
+from math import pi
+
 import numpy as np
 
-from math import exp, sqrt, pi
 from .kernel import Kernel
 
 
 class PeriodicExponential(Kernel):
-
     def __init__(self, var, lscale, period):
         self.var = var
         self.lscale = lscale

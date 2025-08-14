@@ -1,13 +1,12 @@
 """Score process fitter using the standard GP batch equations."""
 
 import numpy as np
+from scipy.linalg import solve_triangular
 
 from .fitter import Fitter
-from scipy.linalg import solve_triangular
 
 
 class BatchFitter(Fitter):
-
     def __init__(self, kernel):
         super().__init__(kernel)
         self._cov = None
@@ -30,11 +29,8 @@ class BatchFitter(Fitter):
             return
         # Stable computation of the woodbury inverse.
         xs_sqrt = np.sqrt(self.xs)
-        b_cho = np.linalg.cholesky(
-                np.eye(len(self.ts))
-                + np.outer(xs_sqrt, xs_sqrt) * self._k_mat)
-        mat = solve_triangular(
-                b_cho, np.diag(xs_sqrt), lower=True, overwrite_b=True)
+        b_cho = np.linalg.cholesky(np.eye(len(self.ts)) + np.outer(xs_sqrt, xs_sqrt) * self._k_mat)
+        mat = solve_triangular(b_cho, np.diag(xs_sqrt), lower=True, overwrite_b=True)
         w_inv = np.transpose(mat).dot(mat)
         # Recompute mean and covariance.
         cov = self._k_mat - self._k_mat.dot(w_inv).dot(self._k_mat)
@@ -58,8 +54,9 @@ class BatchFitter(Fitter):
         if len(self.ts) == 0:
             return 0.0
         # C.f. Rasmussen and Williams' GPML book, eqs. (3.73) and (3.74).
-        return (-np.sum(np.log(np.diag(self._b_cholesky)))
-                + 0.5 * np.dot(self.ns, np.dot(self._cov, self.ns)))
+        return -np.sum(np.log(np.diag(self._b_cholesky))) + 0.5 * np.dot(
+            self.ns, np.dot(self._cov, self.ns)
+        )
 
     @property
     def kl_log_likelihood_contrib(self):

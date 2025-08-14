@@ -1,11 +1,10 @@
 import numpy as np
+from scipy.linalg import block_diag
 
 from .kernel import Kernel
-from scipy.linalg import block_diag
 
 
 class Add(Kernel):
-
     def __init__(self, first, second):
         self.parts = list()
         for k in (first, second):

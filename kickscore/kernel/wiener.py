@@ -2,7 +2,6 @@ import numpy as np
 
 from .kernel import Kernel
 
-
 VEC_ZERO = np.zeros(1)
 VEC_ONE = np.ones(1)
 MAT_ZERO = np.zeros((1, 1))
@@ -10,7 +9,6 @@ MAT_ONE = np.ones((1, 1))
 
 
 class Wiener(Kernel):
-
     """Kernel of a Wiener process.
 
     For convenience, it is also possible to specify an additional positive
@@ -27,8 +25,7 @@ class Wiener(Kernel):
             ts2 = ts1
         ts1 = np.asarray(ts1)
         ts2 = np.asarray(ts2)
-        return (self.var * (np.fmin(ts1[:,None], ts2[None,:]) - self.t0)
-                + self.var_t0)
+        return self.var * (np.fmin(ts1[:, None], ts2[None, :]) - self.t0) + self.var_t0
 
     def k_diag(self, ts):
         ts = np.asarray(ts)

@@ -1,0 +1,90 @@
+[project]
+name = "kickscore"
+version = "0.2.0"
+description = "A dynamic skill rating system."
+authors = [
+  {name = "Lucas Maystre", email = "lucas@maystre.ch"},
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+    "elo",
+    "ranking",
+    "skill",
+    "score",
+    "rating",
+    "strength",
+    "game",
+    "comparison",
+    "match",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Games/Entertainment",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "numba",
+]
+
+[project.urls]
+Homepage = "https://github.com/lucasmaystre/kickscore"
+Repository = "https://github.com/lucasmaystre/kickscore.git"
+Issues = "https://github.com/lucasmaystre/kickscore/issues"
+
+[build-system]
+requires = ["uv_build>=0.7.19,<0.8.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.403",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.8",
+]
+
+[tool.uv.build-backend]
+module-name = "kickscore"
+module-root = ""
+source-include = [
+    "tests/**",
+    "examples/*.ipynb",
+]
+
+[tool.ruff]
+line-length = 100  # Default is 88.
+
+[tool.ruff.format]
+line-ending = "lf"  # Default is "auto".
+
+[tool.ruff.lint]
+extend-select = ["W", "I"]  # Adds warnings & imports.
+ignore = ["E731", "E741"]
+
+[tool.pyright]
+include = ["choix", "tests"]
+deprecateTypingAliases = true
+reportDuplicateImport = true
+reportFunctionMemberAccess = "error"
+reportImportCycles = "error"
+reportIncompatibleMethodOverride = "error"
+reportInvalidStringEscapeSequence = "error"
+reportMatchNotExhaustive = "error"
+reportMissingImports = "error"
+reportPropertyTypeMismatch = "error"
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUntypedBaseClass = "error"
+strictDictionaryInference = true
+strictListInference = true
+strictSetInference = true
+reportMissingParameterType = true
