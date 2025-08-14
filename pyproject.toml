@@ -36,7 +36,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-plotting = ["matplotlib"]
+all = [
+    "matplotlib",
+    "notebook",
+]
 
 [project.urls]
 Homepage = "https://github.com/lucasmaystre/kickscore"
